@@ -1,4 +1,4 @@
-# FastAPI 核心
+# FastAPI 框架
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
@@ -6,27 +6,43 @@ pydantic-settings==2.1.0
 
 # 数据库
 sqlalchemy==2.0.23
-alembic==1.13.0
+alembic==1.13.1
 psycopg2-binary==2.9.9
-asyncpg==0.29.0
 
-# 向量数据库
-qdrant-client==1.7.0
-numpy==1.24.3
-
-# 认证和权限
+# 认证
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
 
+# 向量数据库
+qdrant-client==1.7.0
+
+# HTTP 客户端
+aiohttp==3.9.1
+httpx==0.25.2
+
+# 数据处理
+numpy==1.24.3
+pandas==2.1.4
+
 # 文件处理
 python-magic==0.4.27
-PyPDF2==3.0.1
-python-docx==1.1.0
-markdown==3.5.1
+Pillow==10.1.0
+
+# 日志和监控
+loguru==0.7.2
+
+# 测试
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# 开发工具
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
 
 # 图像处理
-Pillow==10.1.0
 opencv-python==4.8.1.78
 
 # AI/ML 相关
@@ -39,19 +55,12 @@ sentence-transformers==2.2.2
 
 # 工具库
 python-dotenv==1.0.0
-httpx==0.25.2
 aiofiles==23.2.1
 redis==5.0.1
 celery==5.3.4
 
-# 测试
-pytest==7.4.3
-pytest-asyncio==0.21.1
-httpx==0.25.2
+# 工具库
 factory-boy==3.3.0
 
-# 开发工具
-black==23.11.0
-isort==5.12.0
-flake8==6.1.0
+# 工具库
 mypy==1.7.1 

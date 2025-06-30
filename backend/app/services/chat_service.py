@@ -3,19 +3,24 @@
 """
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any, AsyncGenerator
-import uuid
 from datetime import datetime
 import asyncio
+import logging
 
 from app.models.chat import ChatSession, ChatMessage
-from app.models.knowledge_base import KnowledgeBase, TextChunk
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.models.knowledge_base import TextChunk, ImageVector
+from app.schemas.chat import ChatResponse
+from app.services.vector_service import VectorService
+from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 class ChatService:
     """聊天服务类"""
     
     def __init__(self, db: Session):
         self.db = db
+        self.vector_service = VectorService(db)
     
     def get_user_sessions(self, user_id: str) -> List[ChatSession]:
         """获取用户的聊天会话列表"""
@@ -24,40 +29,34 @@ class ChatService:
         ).order_by(ChatSession.updated_at.desc()).all()
     
     def get_session_by_id(self, session_id: str, user_id: str) -> Optional[ChatSession]:
-        """根据ID获取聊天会话（检查权限）"""
+        """根据ID获取会话（检查权限）"""
         return self.db.query(ChatSession).filter(
             ChatSession.id == session_id,
             ChatSession.user_id == user_id
         ).first()
     
-    def create_session(
-        self, 
-        user_id: str, 
-        title: Optional[str], 
-        kb_ids: Optional[List[str]]
-    ) -> ChatSession:
-        """创建聊天会话"""
+    def get_session_messages(self, session_id: str, user_id: str) -> List[ChatMessage]:
+        """获取会话消息"""
+        # 先检查权限
+        session = self.get_session_by_id(session_id, user_id)
+        if not session:
+            return []
+        
+        return self.db.query(ChatMessage).filter(
+            ChatMessage.session_id == session_id
+        ).order_by(ChatMessage.created_at).all()
+    
+    def create_session(self, user_id: str, name: Optional[str], kb_ids: Optional[List[str]]) -> ChatSession:
+        """创建新的聊天会话"""
         session = ChatSession(
             user_id=user_id,
-            title=title or f"新对话 {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            name=name or f"新对话 {datetime.now().strftime('%Y-%m-%d %H:%M')}",
             knowledge_base_ids=kb_ids or []
         )
-        
         self.db.add(session)
         self.db.commit()
         self.db.refresh(session)
-        
         return session
-    
-    def delete_session(self, session_id: str, user_id: str) -> bool:
-        """删除聊天会话"""
-        session = self.get_session_by_id(session_id, user_id)
-        if not session:
-            return False
-        
-        self.db.delete(session)
-        self.db.commit()
-        return True
     
     async def process_chat(
         self,
@@ -160,10 +159,64 @@ class ChatService:
         }
     
     async def _rag_search(self, query: str, kb_ids: List[str]) -> str:
-        """RAG 检索"""
+        """RAG 检索 - 使用向量化引擎"""
         if not kb_ids:
             return f"这是对 '{query}' 的回复。请先选择知识库以获取更准确的答案。"
         
+        try:
+            # 使用向量化服务进行混合搜索
+            search_results = await self.vector_service.hybrid_search(
+                query, 
+                kb_ids, 
+                top_k=settings.TOP_K_RESULTS
+            )
+            
+            text_results = search_results["text"]
+            image_results = search_results["image"]
+            
+            if not text_results and not image_results:
+                return f"抱歉，在知识库中未找到与 '{query}' 直接相关的内容。请尝试使用其他关键词或检查知识库是否包含相关信息。"
+            
+            # 构建上下文
+            context_parts = []
+            
+            # 添加文本结果
+            if text_results:
+                context_parts.append("相关文本内容：")
+                for i, result in enumerate(text_results[:3], 1):
+                    context_parts.append(f"{i}. {result['content'][:200]}...")
+            
+            # 添加图片结果
+            if image_results:
+                context_parts.append("\n相关图片：")
+                for i, result in enumerate(image_results[:2], 1):
+                    context_parts.append(f"{i}. {result['description']}")
+            
+            context = "\n".join(context_parts)
+            
+            # 构建回答
+            answer = f"""基于知识库内容，为您提供以下回答：
+
+问题：{query}
+
+{context}
+
+回答：根据检索到的相关内容，{query} 的相关信息如上所示。"""
+            
+            # 如果有高相关性结果，提供更具体的回答
+            if text_results and text_results[0]["score"] > 0.8:
+                best_match = text_results[0]["content"]
+                answer += f"\n\n最相关的信息：{best_match[:300]}..."
+            
+            return answer
+            
+        except Exception as e:
+            logger.error(f"RAG search error: {e}")
+            # 降级到关键词匹配
+            return self._fallback_keyword_search(query, kb_ids)
+    
+    def _fallback_keyword_search(self, query: str, kb_ids: List[str]) -> str:
+        """降级关键词搜索"""
         # 获取知识库内容
         chunks = []
         for kb_id in kb_ids:
@@ -175,7 +228,7 @@ class ChatService:
         if not chunks:
             return f"这是对 '{query}' 的回复。所选知识库暂无内容，请先上传文档。"
         
-        # 简单的关键词匹配（实际项目中应使用向量检索）
+        # 简单的关键词匹配
         relevant_chunks = []
         query_words = query.lower().split()
         
