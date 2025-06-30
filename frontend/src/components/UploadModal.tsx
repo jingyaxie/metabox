@@ -69,7 +69,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
         })
       }, 200)
 
-      const response = await apiClient.post(`/kb/${kbId}/${endpoint}`, formData, {
+      await apiClient.post(`/kb/${kbId}/${endpoint}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

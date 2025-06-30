@@ -34,7 +34,6 @@ const RecallTestPanel: React.FC<RecallTestPanelProps> = ({ kbId }) => {
   const [cases, setCases] = useState<RecallTestCase[]>([])
   const [loading, setLoading] = useState(false)
   const [running, setRunning] = useState(false)
-  const [report, setReport] = useState<any>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [newTestName, setNewTestName] = useState('')
   const [newTestDesc, setNewTestDesc] = useState('')
@@ -66,7 +65,6 @@ const RecallTestPanel: React.FC<RecallTestPanelProps> = ({ kbId }) => {
   const handleSelectTest = (test: RecallTest) => {
     setSelectedTest(test)
     fetchCases(test.id)
-    setReport(null)
   }
 
   const handleCreateTest = async () => {
@@ -92,8 +90,7 @@ const RecallTestPanel: React.FC<RecallTestPanelProps> = ({ kbId }) => {
     if (!selectedTest) return
     setRunning(true)
     try {
-      const res = await apiClient.post(`/kb/${kbId}/recall-tests/${selectedTest.id}/run`, { test_id: selectedTest.id })
-      setReport(res.data)
+      await apiClient.post(`/kb/${kbId}/recall-tests/${selectedTest.id}/run`, { test_id: selectedTest.id })
       fetchTests()
       fetchCases(selectedTest.id)
     } finally {

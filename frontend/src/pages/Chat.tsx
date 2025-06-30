@@ -27,7 +27,6 @@ const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const [streaming, setStreaming] = useState(false)
   const [selectedKbs, setSelectedKbs] = useState<string[]>([])
   const [availableKbs, setAvailableKbs] = useState<KnowledgeBase[]>([])
   const [showKbSelector, setShowKbSelector] = useState(false)
@@ -252,11 +251,11 @@ const Chat: React.FC = () => {
                   onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                   placeholder="输入消息..."
                   className="flex-1 input-field"
-                  disabled={loading || streaming}
+                  disabled={loading}
                 />
                 <button
                   onClick={sendMessage}
-                  disabled={!inputMessage.trim() || loading || streaming}
+                  disabled={!inputMessage.trim() || loading}
                   className="btn-primary px-6"
                 >
                   发送

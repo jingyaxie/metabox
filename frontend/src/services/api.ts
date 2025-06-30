@@ -1,12 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
 
-// API 响应类型
-interface ApiResponse<T = any> {
-  success: boolean
-  data?: T
-  message?: string
-}
-
 // 创建 axios 实例
 const apiClient: AxiosInstance = axios.create({
   baseURL: '/api',
