@@ -1,10 +1,11 @@
 """
 聊天 API
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import List, Optional
+import json
 
 from app.core.database import get_db
 from app.services.auth_service import AuthService
@@ -121,4 +122,39 @@ async def delete_chat_session(
             detail="聊天会话不存在或无权限删除"
         )
     
-    return {"message": "聊天会话删除成功"} 
+    return {"message": "聊天会话删除成功"}
+
+@router.websocket("/ws/{session_id}")
+async def websocket_chat(
+    websocket: WebSocket,
+    session_id: str,
+    db: Session = Depends(get_db)
+):
+    """WebSocket 聊天接口"""
+    await websocket.accept()
+    
+    try:
+        while True:
+            # 接收消息
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            
+            # 处理消息
+            chat_service = ChatService(db)
+            response = await chat_service.process_chat_stream(
+                session_id=session_id,
+                message=message_data.get("message", ""),
+                kb_ids=message_data.get("kb_ids", [])
+            )
+            
+            # 发送流式响应
+            for chunk in response:
+                await websocket.send_text(json.dumps(chunk))
+                
+    except WebSocketDisconnect:
+        print("WebSocket 连接断开")
+    except Exception as e:
+        await websocket.send_text(json.dumps({
+            "type": "error",
+            "message": str(e)
+        })) 
