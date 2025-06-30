@@ -375,3 +375,34 @@ docker-compose restart postgres
 - 📧 邮箱：dev@metabox.com
 - 💬 讨论：[GitHub Discussions](https://github.com/your-repo/MetaBox/discussions)
 - 🐛 问题反馈：[GitHub Issues](https://github.com/your-repo/MetaBox/issues) 
+
+## 智能配置与前后端联调说明
+
+### 1. 智能配置API对接
+- 路径：`POST /kb/smart-config`
+- 参数：content（文档内容），user_preferences（可选，用户自定义参数）
+- 返回：推荐参数、类型、置信度、验证结果
+
+### 2. 前端参数映射
+- 推荐参数与前端表单字段一一对应
+- 支持高级参数（分隔符、header层级、语义阈值等）
+- 参数变更后可实时请求API校验与预览
+
+### 3. 配置预览与性能评估
+- 路径：`POST /kb/smart-config/preview`
+- 返回：分块预览、性能指标、质量评分
+- 前端展示：分块内容、分块数、平均大小、处理时间、内存、存储、评分
+
+### 4. 配置模板管理
+- 支持保存、应用、更新、删除配置模板
+- 路径：`/kb/smart-config/template`（POST/GET/PUT/DELETE）
+- 批量应用：`/kb/smart-config/batch`
+
+### 5. Embedding路由与混合分块
+- embedding_model参数可选，支持多模型
+- use_parent_child/parent_chunk_size/child_chunk_size参数支持混合分块
+- 前端可视化父子结构
+
+---
+
+如需联调或扩展新功能，请参考docs/rag_optimization_tech.md技术方案。 

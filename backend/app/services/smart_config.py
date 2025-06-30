@@ -33,6 +33,9 @@ from app.services.text_splitter import (
     SmartParameterRecommender as BaseSmartParameterRecommender,
     SmartConfigManager as BaseSmartConfigManager
 )
+from app.services.advanced_preview import AdvancedPreviewService
+from app.services.hybrid_chunker import HybridChunker
+from app.services.embedding_router import EmbeddingRouter
 
 logger = logging.getLogger(__name__)
 
@@ -472,52 +475,50 @@ class SmartConfigService:
     """智能配置服务"""
     
     def __init__(self):
-        self.detector = DocumentTypeDetector()
-        self.recommender = ParameterRecommender()
-        self.validator = ConfigValidator()
+        self.document_detector = DocumentTypeDetector()
+        self.parameter_recommender = ParameterRecommender()
+        self.config_validator = ConfigValidator()
         self.template_manager = ConfigTemplateManager()
         self.performance_analyzer = PerformanceAnalyzer()
+        self.advanced_preview_service = AdvancedPreviewService()
+        self.hybrid_chunker = HybridChunker()
+        self.embedding_router = EmbeddingRouter()
     
     async def get_smart_config(
         self,
         request: SmartConfigRequest
     ) -> SmartConfigResponse:
-        """获取智能配置"""
+        """获取智能配置推荐"""
+        start_time = time.time()
         
         # 检测文档类型
-        document_type = self.detector.detect_document_type(request.content)
-        confidence = self.detector.get_confidence_score(request.content, document_type)
-        
-        # 计算内容长度
-        content_length = len(request.content)
+        document_type = self.document_detector.detect_document_type(request.content)
+        confidence = self.document_detector.get_confidence_score(request.content, document_type)
         
         # 获取参数推荐
-        recommendation = self.recommender.get_recommendations(
-            document_type, content_length, request.content
+        recommendations = self.parameter_recommender.get_recommendations(
+            document_type, len(request.content), request.content
         )
         
-        # 应用用户偏好
-        if request.user_preferences:
-            # 更新推荐参数
-            for key, value in request.user_preferences.items():
-                if hasattr(recommendation, key):
-                    setattr(recommendation, key, value)
-        
-        # 验证推荐参数
-        validation = self.validator.validate_config(
-            recommendation.chunk_size,
-            recommendation.chunk_overlap,
-            recommendation.embedding_model,
-            recommendation.similarity_threshold,
-            recommendation.max_tokens
+        # 性能分析
+        performance = self.performance_analyzer.analyze_performance(
+            request.content, recommendations.recommended_config
         )
+        
+        # 高级预览
+        preview = await self.advanced_preview_service.get_comprehensive_preview(
+            request.content, recommendations.recommended_config
+        )
+        
+        processing_time = time.time() - start_time
         
         return SmartConfigResponse(
             document_type=document_type,
-            content_length=content_length,
-            recommendation=recommendation,
-            validation=validation,
-            confidence=confidence
+            confidence_score=confidence,
+            recommendations=recommendations,
+            performance_metrics=performance,
+            processing_time=processing_time,
+            advanced_preview=preview
         )
     
     async def validate_custom_config(
@@ -528,10 +529,9 @@ class SmartConfigService:
         similarity_threshold: float,
         max_tokens: int
     ) -> ValidationResult:
-        """验证自定义配置"""
-        return self.validator.validate_config(
-            chunk_size, chunk_overlap, embedding_model,
-            similarity_threshold, max_tokens
+        """验证自定义配置参数"""
+        return self.config_validator.validate_config(
+            chunk_size, chunk_overlap, embedding_model, similarity_threshold, max_tokens
         )
     
     async def create_template(self, template_data: ConfigTemplateCreate) -> ConfigTemplate:
@@ -543,7 +543,7 @@ class SmartConfigService:
         return await self.template_manager.get_template(template_id)
     
     async def list_templates(self) -> List[ConfigTemplate]:
-        """列出所有模板"""
+        """获取配置模板列表"""
         return await self.template_manager.list_templates()
     
     async def update_template(self, template_id: str, update_data: ConfigTemplateUpdate) -> Optional[ConfigTemplate]:
@@ -558,119 +558,159 @@ class SmartConfigService:
         """应用配置模板"""
         template = await self.get_template(template_id)
         if not template:
-            raise ValueError("模板不存在")
+            raise ValueError("配置模板不存在")
         
-        # 使用模板配置创建请求
-        request = SmartConfigRequest(
-            content=content,
-            user_preferences=template.config
-        )
+        # 使用模板配置
+        request = SmartConfigRequest(content=content)
+        request.advanced_config = AdvancedConfig(**template.config)
         
         return await self.get_smart_config(request)
     
     async def batch_configure(self, batch_request: BatchConfigRequest) -> BatchConfigResponse:
         """批量配置"""
         results = []
-        success_count = 0
-        failed_count = 0
-        errors = []
+        total_time = 0
         
-        for doc_id in batch_request.document_ids:
+        for i, content in enumerate(batch_request.contents):
             try:
-                # 这里应该从数据库获取文档内容
-                # 暂时使用模拟内容
-                content = f"Document content for {doc_id}"
+                start_time = time.time()
                 
-                if batch_request.template_id:
-                    # 使用模板
-                    result = await self.apply_template(batch_request.template_id, content)
-                else:
-                    # 使用自定义配置
-                    request = SmartConfigRequest(
-                        content=content,
-                        user_preferences=batch_request.config
-                    )
-                    result = await self.get_smart_config(request)
+                # 创建请求
+                request = SmartConfigRequest(
+                    content=content,
+                    advanced_config=batch_request.advanced_config
+                )
+                
+                # 获取配置
+                response = await self.get_smart_config(request)
+                
+                processing_time = time.time() - start_time
+                total_time += processing_time
                 
                 results.append({
-                    "doc_id": doc_id,
+                    "index": i,
                     "success": True,
-                    "config": result.dict()
+                    "response": response,
+                    "processing_time": processing_time
                 })
-                success_count += 1
                 
             except Exception as e:
-                error_msg = f"文档 {doc_id} 配置失败: {str(e)}"
-                errors.append(error_msg)
+                logger.error(f"批量配置失败 {i}: {e}")
                 results.append({
-                    "doc_id": doc_id,
+                    "index": i,
                     "success": False,
-                    "error": error_msg
+                    "error": str(e),
+                    "processing_time": 0
                 })
-                failed_count += 1
         
         return BatchConfigResponse(
-            success_count=success_count,
-            failed_count=failed_count,
-            errors=errors,
+            total_contents=len(batch_request.contents),
+            successful_configs=len([r for r in results if r["success"]]),
+            failed_configs=len([r for r in results if not r["success"]]),
+            total_processing_time=total_time,
             results=results
         )
     
     async def get_config_preview(self, content: str, config: Dict[str, Any]) -> ConfigPreview:
         """获取配置预览"""
-        # 这里应该实际执行分割来生成预览
-        # 暂时使用模拟数据
-        chunk_size = config.get("chunk_size", 1024)
-        chunks = []
+        # 使用高级预览服务
+        preview = await self.advanced_preview_service.get_comprehensive_preview(content, config)
         
-        # 简单的分块预览
-        for i in range(0, len(content), chunk_size):
-            chunk = content[i:i + chunk_size]
-            if chunk.strip():
-                chunks.append(chunk[:100] + "..." if len(chunk) > 100 else chunk)
-        
-        # 分析性能
-        performance = self.performance_analyzer.analyze_performance(content, config)
-        
-        # 计算质量评分
+        # 计算质量分数
         quality_score = self._calculate_quality_score(content, config)
         
         return ConfigPreview(
-            chunks=chunks[:5],  # 只显示前5个分块
-            chunk_count=len(chunks),
-            avg_chunk_size=sum(len(chunk) for chunk in chunks) / len(chunks) if chunks else 0,
-            performance_metrics=performance,
-            quality_score=quality_score
+            chunks=preview["chunks"],
+            performance=preview["performance"],
+            suggestions=preview["suggestions"],
+            hierarchy=preview["hierarchy"],
+            statistics=preview["statistics"],
+            quality_score=quality_score,
+            preview_time=preview["preview_time"]
         )
     
+    async def get_advanced_preview(self, content: str, config: Dict[str, Any]) -> Dict[str, Any]:
+        """获取高级预览"""
+        return await self.advanced_preview_service.get_comprehensive_preview(content, config)
+    
+    async def get_quick_preview(self, content: str, config: Dict[str, Any]) -> Dict[str, Any]:
+        """获取快速预览"""
+        return await self.advanced_preview_service.get_quick_preview(content, config)
+    
+    async def compare_configs(self, content: str, configs: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """比较不同配置的效果"""
+        return await self.advanced_preview_service.compare_configs(content, configs)
+    
+    async def get_hybrid_chunks(self, content: str, config: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """获取混合分块"""
+        chunks = await self.hybrid_chunker.create_hybrid_chunks(
+            content,
+            parent_chunk_size=config.get("parent_chunk_size", 1024),
+            child_chunk_size=config.get("chunk_size", 512),
+            child_overlap=config.get("chunk_overlap", 50),
+            use_markdown_structure=config.get("use_markdown", True)
+        )
+        
+        return [
+            {
+                "chunk_id": chunk.chunk_id,
+                "content": chunk.content,
+                "chunk_type": chunk.chunk_type.value,
+                "parent_id": chunk.parent_id,
+                "child_ids": chunk.child_ids,
+                "metadata": chunk.metadata,
+                "level": chunk.level
+            }
+            for chunk in chunks
+        ]
+    
+    async def get_embedding_info(self, text: str, model: str) -> Dict[str, Any]:
+        """获取Embedding信息"""
+        from app.services.embedding_router import EmbeddingModel
+        
+        embedding_model = EmbeddingModel(model)
+        model_info = self.embedding_router.get_model_info(embedding_model)
+        cost_estimate = self.embedding_router.estimate_cost(text, embedding_model)
+        
+        return {
+            "model_info": model_info,
+            "cost_estimate": cost_estimate,
+            "text_length": len(text),
+            "token_estimate": len(text.split())  # 简单估算
+        }
+    
     def _calculate_quality_score(self, content: str, config: Dict[str, Any]) -> float:
-        """计算质量评分"""
-        score = 0.5  # 基础分数
+        """计算质量分数"""
+        score = 0.0
         
-        # 根据分块大小评分
-        chunk_size = config.get("chunk_size", 1024)
-        if 256 <= chunk_size <= 2048:
+        # 分块大小评分
+        chunk_size = config.get("chunk_size", 512)
+        if 256 <= chunk_size <= 1024:
+            score += 0.3
+        elif 128 <= chunk_size <= 2048:
             score += 0.2
-        elif chunk_size < 256:
-            score -= 0.1
-        elif chunk_size > 2048:
-            score -= 0.1
-        
-        # 根据重叠大小评分
-        chunk_overlap = config.get("chunk_overlap", 256)
-        overlap_ratio = chunk_overlap / chunk_size if chunk_size > 0 else 0
-        if 0.1 <= overlap_ratio <= 0.3:
-            score += 0.2
-        elif overlap_ratio < 0.1:
-            score -= 0.1
-        elif overlap_ratio > 0.5:
-            score -= 0.1
-        
-        # 根据相似度阈值评分
-        similarity_threshold = config.get("similarity_threshold", 0.7)
-        if 0.6 <= similarity_threshold <= 0.8:
+        else:
             score += 0.1
-        elif similarity_threshold < 0.5:
-            score -= 0.1
         
-        return min(1.0, max(0.0, score)) 
+        # 重叠度评分
+        overlap = config.get("chunk_overlap", 50)
+        if 20 <= overlap <= 200:
+            score += 0.2
+        else:
+            score += 0.1
+        
+        # Embedding模型评分
+        model = config.get("embedding_model", "bge-m3")
+        if model in ["text-embedding-3-small", "text-embedding-3-large", "bge-m3"]:
+            score += 0.3
+        else:
+            score += 0.2
+        
+        # 相似度阈值评分
+        threshold = config.get("similarity_threshold", 0.7)
+        if 0.6 <= threshold <= 0.9:
+            score += 0.2
+        else:
+            score += 0.1
+        
+        return min(1.0, score) 

@@ -745,4 +745,80 @@ smart_config:
 
 ---
 
-*本文档将随着实现进度持续更新* 
+*本文档将随着实现进度持续更新*
+
+## 智能配置与前后端联调、Embedding路由、混合分块与高级预览设计
+
+### 1. 智能配置API设计
+
+- 路径：`POST /kb/smart-config`
+- 请求体：
+  ```json
+  {
+    "content": "string，待分析文档内容",
+    "user_preferences": { ... 可选，用户自定义参数 ... }
+  }
+  ```
+- 返回体：
+  ```json
+  {
+    "document_type": "code|technical|academic|news|literature|markdown|manual|general",
+    "content_length": 12345,
+    "recommendation": { ... 参数推荐 ... },
+    "validation": { ... 参数验证 ... },
+    "confidence": 0.92
+  }
+  ```
+- 说明：支持参数校验、类型置信度、可扩展模板应用、批量配置等。
+
+### 2. 前端联调说明
+
+- 前端调用API获取推荐参数，支持高级参数调整与实时预览。
+- 支持参数校验、错误提示、配置模板保存/应用。
+- 预览接口：`POST /kb/smart-config/preview`，返回分块预览、性能指标、质量评分。
+- 典型流程：
+  1. 用户上传/粘贴文档，自动请求智能配置API。
+  2. 用户可手动调整参数，点击"验证"实时校验。
+  3. 展示分块预览、性能评估、质量评分。
+  4. 支持保存为模板、批量应用。
+
+### 3. Embedding路由与多模型集成
+
+- 支持多种Embedding模型（如bge-m3、OpenAI、MiniLM等）。
+- 路由策略：
+  - 长文本优先本地模型（如bge-m3），短文本/问句优先OpenAI。
+  - 支持自定义路由规则，接口参数`embedding_model`可选。
+- API扩展：
+  - `embedding_router.get_embedding(text, type)`
+  - 支持父子联合Embedding（Hybrid Embedding），接口参数`parent_text`、`child_text`。
+
+### 4. 混合分块（Parent-Child/Hybrid Chunking）
+
+- 支持Markdown/HTML结构化分块，父子块结构，子块保留父节点信息。
+- 分块参数：`parent_chunk_size`、`child_chunk_size`、`use_parent_child`。
+- 数据结构：
+  ```json
+  {
+    "chunk_id": "string",
+    "content": "string",
+    "parent_id": "string|null",
+    "metadata": { ... }
+  }
+  ```
+- 推荐流程：
+  1. MarkdownHeader分块 -> Parent-Child分块 -> 向量化
+  2. 支持分块预览与结构可视化
+
+### 5. 高级预览与性能评估
+
+- 预览接口：`POST /kb/smart-config/preview`
+- 返回：
+  - 分块内容预览（前5块）
+  - 分块数量、平均大小
+  - 性能指标（处理时间、内存、存储、向量数）
+  - 质量评分（分块均匀性、重叠率、参数合理性）
+- 前端可实时展示，辅助用户调优参数。
+
+---
+
+> 本节为MetaBox智能知识库系统RAG优化与智能配置、分块、向量化、前后端联调的技术设计参考。后续如有新功能（如多查询扩展、Rerank、反馈机制等）可继续补充。 
