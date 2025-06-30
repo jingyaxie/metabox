@@ -106,4 +106,29 @@ class AuthService:
         if user is None:
             raise ValueError("用户不存在")
         
-        return user 
+        return user
+    
+    def update_user_profile(self, user_id: str, username: str, email: str) -> bool:
+        """更新用户信息"""
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return False
+        
+        user.username = username
+        user.email = email
+        user.updated_at = datetime.utcnow()
+        
+        self.db.commit()
+        return True
+    
+    def update_user_password(self, user_id: str, new_password: str) -> bool:
+        """更新用户密码"""
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return False
+        
+        user.password_hash = self.get_password_hash(new_password)
+        user.updated_at = datetime.utcnow()
+        
+        self.db.commit()
+        return True 

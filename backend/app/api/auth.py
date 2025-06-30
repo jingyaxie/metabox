@@ -11,7 +11,7 @@ import jwt
 from app.core.database import get_db
 from app.core.config import settings
 from app.models.user import User
-from app.schemas.auth import UserLogin, UserRegister, TokenResponse
+from app.schemas.auth import UserLogin, UserRegister, TokenResponse, UserProfile, PasswordChange
 from app.services.auth_service import AuthService
 
 router = APIRouter()
@@ -33,11 +33,15 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
     if auth_service.get_user_by_email(user_data.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="邮箱已存在"
+            detail="邮箱已被注册"
         )
     
     # 创建用户
-    user = auth_service.create_user(user_data)
+    user = auth_service.create_user(
+        username=user_data.username,
+        email=user_data.email,
+        password=user_data.password
+    )
     
     # 生成访问令牌
     access_token = auth_service.create_access_token(user.id)
@@ -126,4 +130,92 @@ async def refresh_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效的访问令牌"
-        ) 
+        )
+
+@router.get("/profile")
+async def get_profile(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """获取用户信息"""
+    auth_service = AuthService(db)
+    
+    # 验证当前用户
+    current_user = auth_service.get_current_user(credentials.credentials)
+    
+    return {
+        "id": str(current_user.id),
+        "username": current_user.username,
+        "email": current_user.email,
+        "created_at": current_user.created_at.isoformat()
+    }
+
+@router.put("/profile")
+async def update_profile(
+    profile_data: UserProfile,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """更新用户信息"""
+    auth_service = AuthService(db)
+    
+    # 验证当前用户
+    current_user = auth_service.get_current_user(credentials.credentials)
+    
+    # 检查用户名是否已被其他用户使用
+    existing_user = auth_service.get_user_by_username(profile_data.username)
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="用户名已被使用"
+        )
+    
+    # 检查邮箱是否已被其他用户使用
+    existing_user = auth_service.get_user_by_email(profile_data.email)
+    if existing_user and existing_user.id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="邮箱已被使用"
+        )
+    
+    # 更新用户信息
+    auth_service.update_user_profile(
+        user_id=current_user.id,
+        username=profile_data.username,
+        email=profile_data.email
+    )
+    
+    return {"message": "个人信息更新成功"}
+
+@router.put("/password")
+async def change_password(
+    password_data: PasswordChange,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """修改密码"""
+    auth_service = AuthService(db)
+    
+    # 验证当前用户
+    current_user = auth_service.get_current_user(credentials.credentials)
+    
+    # 验证当前密码
+    if not auth_service.verify_password(password_data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前密码错误"
+        )
+    
+    # 更新密码
+    auth_service.update_user_password(current_user.id, password_data.new_password)
+    
+    return {"message": "密码修改成功"}
+
+@router.post("/logout")
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """用户登出"""
+    # 这里可以添加令牌黑名单逻辑
+    return {"message": "登出成功"} 

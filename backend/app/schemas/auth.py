@@ -22,4 +22,14 @@ class TokenResponse(BaseModel):
     token_type: str
     user_id: str
     username: str
-    role: str 
+    role: str
+
+class UserProfile(BaseModel):
+    """用户信息模型"""
+    username: str
+    email: EmailStr
+
+class PasswordChange(BaseModel):
+    """密码修改模型"""
+    current_password: str
+    new_password: str 
