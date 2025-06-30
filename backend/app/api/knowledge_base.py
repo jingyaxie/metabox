@@ -77,6 +77,40 @@ async def get_knowledge_base(
     
     return knowledge_base
 
+@router.get("/{kb_id}/chunks")
+async def get_knowledge_base_chunks(
+    kb_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """获取知识库文本分块"""
+    auth_service = AuthService(db)
+    kb_service = KnowledgeBaseService(db)
+    
+    # 验证当前用户
+    current_user = auth_service.get_current_user(credentials.credentials)
+    
+    # 获取知识库分块
+    chunks = kb_service.get_knowledge_base_chunks(kb_id, current_user.id)
+    return chunks
+
+@router.get("/{kb_id}/images")
+async def get_knowledge_base_images(
+    kb_id: str,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """获取知识库图片"""
+    auth_service = AuthService(db)
+    kb_service = KnowledgeBaseService(db)
+    
+    # 验证当前用户
+    current_user = auth_service.get_current_user(credentials.credentials)
+    
+    # 获取知识库图片
+    images = kb_service.get_knowledge_base_images(kb_id, current_user.id)
+    return images
+
 @router.delete("/{kb_id}")
 async def delete_knowledge_base(
     kb_id: str,

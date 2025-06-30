@@ -30,6 +30,28 @@ class KnowledgeBaseService:
             KnowledgeBase.owner_id == user_id
         ).first()
     
+    def get_knowledge_base_chunks(self, kb_id: str, user_id: str) -> List[TextChunk]:
+        """获取知识库的文本分块"""
+        # 先检查权限
+        kb = self.get_knowledge_base_by_id(kb_id, user_id)
+        if not kb:
+            return []
+        
+        return self.db.query(TextChunk).filter(
+            TextChunk.knowledge_base_id == kb_id
+        ).order_by(TextChunk.chunk_index).all()
+    
+    def get_knowledge_base_images(self, kb_id: str, user_id: str) -> List[ImageVector]:
+        """获取知识库的图片"""
+        # 先检查权限
+        kb = self.get_knowledge_base_by_id(kb_id, user_id)
+        if not kb:
+            return []
+        
+        return self.db.query(ImageVector).filter(
+            ImageVector.knowledge_base_id == kb_id
+        ).order_by(ImageVector.created_at.desc()).all()
+    
     def create_knowledge_base(
         self, 
         name: str, 
@@ -94,13 +116,24 @@ class KnowledgeBaseService:
                 content = await file.read()
                 buffer.write(content)
             
-            # TODO: 实现文档解析和向量化
-            # 这里应该调用文档解析服务
+            # 创建文本分块（模拟）
+            chunks = self._create_text_chunks(content.decode('utf-8', errors='ignore'), file.filename)
+            for i, chunk_content in enumerate(chunks):
+                text_chunk = TextChunk(
+                    knowledge_base_id=kb_id,
+                    content=chunk_content,
+                    source_file=file.filename,
+                    chunk_index=i
+                )
+                self.db.add(text_chunk)
+            
+            self.db.commit()
             
             return {
                 "success": True,
                 "message": "文档上传成功",
-                "file_path": file_path
+                "file_path": file_path,
+                "chunks_count": len(chunks)
             }
             
         except Exception as e:
@@ -153,9 +186,6 @@ class KnowledgeBaseService:
             self.db.add(image_vector)
             self.db.commit()
             
-            # TODO: 实现图片向量化
-            # 这里应该调用图片向量化服务
-            
             return {
                 "success": True,
                 "message": "图片上传成功",
@@ -166,4 +196,24 @@ class KnowledgeBaseService:
             return {
                 "success": False,
                 "message": f"上传失败: {str(e)}"
-            } 
+            }
+    
+    def _create_text_chunks(self, text: str, filename: str) -> List[str]:
+        """创建文本分块（简单实现）"""
+        # 简单的文本分块，按段落分割
+        paragraphs = text.split('\n\n')
+        chunks = []
+        current_chunk = ""
+        
+        for paragraph in paragraphs:
+            if len(current_chunk) + len(paragraph) > 1000:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = paragraph
+            else:
+                current_chunk += "\n\n" + paragraph if current_chunk else paragraph
+        
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+        
+        return chunks if chunks else [text] 
