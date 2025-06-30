@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import apiClient from '../services/api'
+import RecallTestPanel from '../components/RecallTestPanel'
 
 interface KnowledgeBase {
   id: string
@@ -30,7 +31,7 @@ const KnowledgeBaseDetail: React.FC = () => {
   const [chunks, setChunks] = useState<TextChunk[]>([])
   const [images, setImages] = useState<ImageVector[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'chunks' | 'images'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'chunks' | 'images' | 'recall'>('overview')
 
   useEffect(() => {
     if (id) {
@@ -117,7 +118,8 @@ const KnowledgeBaseDetail: React.FC = () => {
               {[
                 { id: 'overview', name: '概览', icon: '📊' },
                 { id: 'chunks', name: '文档分块', icon: '📄' },
-                { id: 'images', name: '图片', icon: '🖼️' }
+                { id: 'images', name: '图片', icon: '🖼️' },
+                { id: 'recall', name: '召回测试', icon: '🔍' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -255,6 +257,10 @@ const KnowledgeBaseDetail: React.FC = () => {
                   </div>
                 )}
               </div>
+            )}
+
+            {activeTab === 'recall' && (
+              <RecallTestPanel kbId={knowledgeBase.id} />
             )}
           </div>
         </div>
