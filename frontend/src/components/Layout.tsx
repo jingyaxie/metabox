@@ -60,6 +60,17 @@ const Layout: React.FC = () => {
                 >
                   聊天
                 </button>
+                
+                <button
+                  onClick={() => navigate('/plugins')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    isActive('/plugins')
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  插件
+                </button>
               </div>
             </div>
             

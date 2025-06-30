@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 import asyncio
 import json
 import logging
+import uuid
 from datetime import datetime
 
 from app.plugins import plugin_manager, PluginBase
@@ -13,12 +14,98 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# 内存中的任务存储（实际项目中应该使用数据库）
+agent_tasks: Dict[str, Dict[str, Any]] = {}
+
 class AgentService:
     """Agent推理服务"""
     
-    def __init__(self, vector_service: VectorService):
+    def __init__(self, vector_service: Optional[VectorService] = None):
         self.vector_service = vector_service
         self.max_steps = 10  # 最大推理步数
+    
+    async def create_task(
+        self,
+        user_id: str,
+        task: str,
+        kb_ids: List[str] = [],
+        available_plugins: List[str] = []
+    ) -> Dict[str, Any]:
+        """创建Agent任务"""
+        task_id = str(uuid.uuid4())
+        
+        task_data = {
+            "id": task_id,
+            "user_id": user_id,
+            "task": task,
+            "status": "pending",
+            "kb_ids": kb_ids,
+            "available_plugins": available_plugins,
+            "steps": [],
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        
+        agent_tasks[task_id] = task_data
+        
+        # 异步执行任务
+        asyncio.create_task(self._execute_task_async(task_id))
+        
+        return task_data
+    
+    async def get_task(self, task_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        """获取任务详情"""
+        task = agent_tasks.get(task_id)
+        if task and task["user_id"] == user_id:
+            return task
+        return None
+    
+    async def get_user_tasks(
+        self,
+        user_id: str,
+        limit: int = 10,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """获取用户的任务列表"""
+        user_tasks = [
+            task for task in agent_tasks.values()
+            if task["user_id"] == user_id
+        ]
+        
+        # 按创建时间倒序排列
+        user_tasks.sort(key=lambda x: x["created_at"], reverse=True)
+        
+        return user_tasks[offset:offset + limit]
+    
+    async def _execute_task_async(self, task_id: str):
+        """异步执行任务"""
+        task = agent_tasks.get(task_id)
+        if not task:
+            return
+        
+        try:
+            # 更新任务状态为运行中
+            task["status"] = "running"
+            task["updated_at"] = datetime.utcnow().isoformat()
+            
+            # 执行Agent推理
+            result = await self.execute_agent_task(
+                task=task["task"],
+                kb_ids=task["kb_ids"],
+                available_plugins=task["available_plugins"]
+            )
+            
+            # 更新任务结果
+            task["status"] = "completed" if result["success"] else "failed"
+            task["result"] = result
+            task["completed_at"] = datetime.utcnow().isoformat()
+            task["updated_at"] = datetime.utcnow().isoformat()
+            
+        except Exception as e:
+            logger.error(f"任务执行失败: {e}")
+            task["status"] = "failed"
+            task["error"] = str(e)
+            task["updated_at"] = datetime.utcnow().isoformat()
     
     async def execute_agent_task(
         self, 
@@ -194,6 +281,12 @@ class AgentService:
                 "error": "未指定知识库"
             }
         
+        if not self.vector_service:
+            return {
+                "success": False,
+                "error": "向量服务未初始化"
+            }
+        
         try:
             results = await self.vector_service.hybrid_search(query, kb_ids)
             return {
@@ -219,24 +312,25 @@ class AgentService:
         # 简单的回答生成逻辑
         # 实际项目中应该使用LLM生成更智能的回答
         
-        response_parts = [f"关于任务「{task}」的回答：\n"]
+        response_parts = [f"任务: {task}"]
+        response_parts.append(f"执行了 {len(reasoning_steps)} 个推理步骤:")
         
-        for result in results:
-            if result["type"] == "knowledge_search" and result["result"]["success"]:
-                search_results = result["result"]["results"]
-                if search_results["text"]:
-                    response_parts.append("📚 知识库搜索结果：")
-                    for i, text_result in enumerate(search_results["text"][:2], 1):
-                        response_parts.append(f"{i}. {text_result['content'][:100]}...")
-                    response_parts.append("")
-            
-            elif result["type"] == "plugin_call" and result["result"]["success"]:
-                plugin_result = result["result"]["result"]
-                response_parts.append(f"🔧 插件执行结果：{plugin_result}")
-                response_parts.append("")
+        for step in reasoning_steps:
+            response_parts.append(f"- 步骤 {step['step']}: {step['reasoning']}")
         
-        if len(response_parts) == 1:
-            response_parts.append("抱歉，未能找到相关信息或执行相关操作。")
+        if results:
+            response_parts.append("执行结果:")
+            for result in results:
+                if result["type"] == "knowledge_search":
+                    if result["result"]["success"]:
+                        response_parts.append(f"- 知识库搜索: 找到 {len(result['result']['results'])} 条相关结果")
+                    else:
+                        response_parts.append(f"- 知识库搜索: {result['result']['error']}")
+                elif result["type"] == "plugin_call":
+                    if result["result"]["success"]:
+                        response_parts.append(f"- 插件调用: {result['result']['result']}")
+                    else:
+                        response_parts.append(f"- 插件调用: {result['result']['error']}")
         
         return "\n".join(response_parts)
     
@@ -255,13 +349,14 @@ class AgentService:
     
     def _extract_math_expression(self, task: str) -> str:
         """提取数学表达式"""
-        import re
         # 简单的数学表达式提取
-        math_pattern = r'(\d+[\+\-\*\/]\d+)'
-        match = re.search(math_pattern, task)
-        if match:
-            return match.group(1)
-        return "2+2"  # 默认表达式
+        import re
+        # 匹配数字和运算符
+        pattern = r'[\d+\-*/().]+'
+        matches = re.findall(pattern, task)
+        if matches:
+            return matches[0]
+        return "0"
     
     def _extract_city_name(self, task: str) -> str:
         """提取城市名称"""

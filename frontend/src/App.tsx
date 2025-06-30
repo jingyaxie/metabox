@@ -9,6 +9,7 @@ import KnowledgeBases from './pages/KnowledgeBase'
 import KnowledgeBaseDetail from './pages/KnowledgeBaseDetail'
 import Chat from './pages/Chat'
 import Settings from './pages/Settings'
+import Plugins from './pages/Plugins'
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
               <Route path="kb/:id" element={<KnowledgeBaseDetail />} />
               <Route path="chat" element={<Chat />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="plugins" element={<Plugins />} />
             </Route>
             
             {/* 404 页面 */}

@@ -154,6 +154,84 @@ async def disable_plugin(
             detail=f"禁用插件失败: {str(e)}"
         )
 
+@router.post("/agent/task")
+async def create_agent_task(
+    request: AgentTaskRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """创建Agent任务"""
+    try:
+        agent_service = AgentService()
+        task = await agent_service.create_task(
+            user_id=current_user.id,
+            task=request.task,
+            kb_ids=request.kb_ids,
+            available_plugins=request.available_plugins
+        )
+        
+        return {
+            "success": True,
+            "data": task
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"创建Agent任务失败: {str(e)}"
+        )
+
+@router.get("/agent/task/{task_id}")
+async def get_agent_task(
+    task_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """获取Agent任务状态"""
+    try:
+        agent_service = AgentService()
+        task = await agent_service.get_task(task_id, current_user.id)
+        
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="任务不存在"
+            )
+        
+        return {
+            "success": True,
+            "data": task
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取任务状态失败: {str(e)}"
+        )
+
+@router.get("/agent/tasks")
+async def get_agent_tasks(
+    current_user: User = Depends(get_current_user),
+    limit: int = 10,
+    offset: int = 0
+):
+    """获取用户的任务列表"""
+    try:
+        agent_service = AgentService()
+        tasks = await agent_service.get_user_tasks(
+            user_id=current_user.id,
+            limit=limit,
+            offset=offset
+        )
+        
+        return {
+            "success": True,
+            "data": tasks
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取任务列表失败: {str(e)}"
+        )
+
 @router.post("/agent/execute")
 async def execute_agent_task(
     request: AgentTaskRequest,
