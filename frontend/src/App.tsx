@@ -1,57 +1,45 @@
-import { Routes, Route } from 'react-router-dom'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
-import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
-import Chat from './pages/Chat'
-import KnowledgeBase from './pages/KnowledgeBase'
+import KnowledgeBases from './pages/KnowledgeBases'
 import KnowledgeBaseDetail from './pages/KnowledgeBaseDetail'
-import ProtectedRoute from './components/ProtectedRoute'
+import Chat from './pages/Chat'
+import Settings from './pages/Settings'
 
 function App() {
   return (
     <AuthProvider>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route 
-            path="/dashboard" 
-            element={
+      <Router>
+        <div className="App">
+          <Routes>
+            {/* 公开路由 */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* 受保护的路由 */}
+            <Route path="/" element={
               <ProtectedRoute>
-                <Dashboard />
+                <Layout />
               </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/chat" 
-            element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/kb" 
-            element={
-              <ProtectedRoute>
-                <KnowledgeBase />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/kb/:id" 
-            element={
-              <ProtectedRoute>
-                <KnowledgeBaseDetail />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
-      </Layout>
+            }>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="kb" element={<KnowledgeBases />} />
+              <Route path="kb/:id" element={<KnowledgeBaseDetail />} />
+              <Route path="chat" element={<Chat />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+            
+            {/* 404 页面 */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </div>
+      </Router>
     </AuthProvider>
   )
 }
