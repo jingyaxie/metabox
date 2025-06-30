@@ -41,7 +41,8 @@
 
 ### 方式一：使用一键部署脚本（推荐）
 
-#### macOS/Linux 用户
+#### 选项A：Docker版本（推荐）
+##### macOS/Linux 用户
 ```bash
 # 给脚本添加执行权限
 chmod +x scripts/dev_setup.sh
@@ -65,7 +66,7 @@ chmod +x scripts/dev_setup.sh
 ./scripts/dev_setup.sh clean
 ```
 
-#### Windows 用户
+##### Windows 用户
 ```cmd
 # 首次完整环境设置
 scripts\dev_setup.bat setup
@@ -86,12 +87,41 @@ scripts\dev_setup.bat restart
 scripts\dev_setup.bat clean
 ```
 
+#### 选项B：非Docker版本（本地服务）
+##### macOS/Linux 用户
+```bash
+# 给脚本添加执行权限
+chmod +x scripts/dev_setup_no_docker.sh
+
+# 首次完整环境设置（会自动安装PostgreSQL、Redis等）
+./scripts/dev_setup_no_docker.sh setup
+
+# 启动服务
+./scripts/dev_setup_no_docker.sh start
+
+# 检查服务状态
+./scripts/dev_setup_no_docker.sh status
+
+# 停止服务
+./scripts/dev_setup_no_docker.sh stop
+
+# 重启服务
+./scripts/dev_setup_no_docker.sh restart
+
+# 清理环境
+./scripts/dev_setup_no_docker.sh clean
+```
+
+**注意**：非Docker版本需要系统管理员权限来安装和配置PostgreSQL、Redis等服务。
+
 ### 方式二：手动部署
 
 #### 环境要求
 - Python 3.8+
 - Node.js 16+
-- Docker & Docker Compose
+- Docker & Docker Compose (Docker版本)
+- PostgreSQL 14+ (非Docker版本)
+- Redis 6+ (非Docker版本)
 - Git
 
 #### 后端部署
@@ -165,8 +195,9 @@ MetaBox/
 │   └── requirements.txt
 ├── docker/                   # Docker 配置
 ├── scripts/                  # 部署脚本
-│   ├── dev_setup.sh         # macOS/Linux 开发脚本
-│   └── dev_setup.bat        # Windows 开发脚本
+│   ├── dev_setup.sh         # macOS/Linux Docker开发脚本
+│   ├── dev_setup.bat        # Windows Docker开发脚本
+│   └── dev_setup_no_docker.sh # 非Docker开发脚本
 ├── docs/                     # 项目文档
 └── tests/                    # 集成测试
 ```
@@ -284,16 +315,24 @@ LOG_LEVEL=INFO
 ### Q: 脚本执行权限问题
 ```bash
 chmod +x scripts/dev_setup.sh
+chmod +x scripts/dev_setup_no_docker.sh
 ```
 
 ### Q: Docker 服务未启动
 确保 Docker Desktop 已启动并运行。
 
+### Q: 非Docker版本需要管理员权限
+非Docker版本需要安装系统服务，可能需要sudo权限。
+
 ### Q: 端口被占用
 修改 `docker-compose.yml` 中的端口映射，或停止占用端口的服务。
 
 ### Q: 数据库连接失败
-检查 `.env` 文件中的数据库配置，确保 PostgreSQL 容器正常运行。
+检查 `.env` 文件中的数据库配置，确保数据库服务正常运行。
+
+### Q: 选择哪个部署方式？
+- **Docker版本**：推荐，环境隔离，一键部署
+- **非Docker版本**：适合需要直接访问本地服务的场景
 
 ## 📞 支持
 
