@@ -24,10 +24,20 @@ frontend/build/
 frontend/.next/
 frontend/out/
 
+# TypeScript 编译输出
+frontend/*.tsbuildinfo
+frontend/.tsbuildinfo
+
 # 缓存
 frontend/.cache/
 frontend/.parcel-cache/
 frontend/.vite/
+
+# ESLint 缓存
+frontend/.eslintcache
+
+# Prettier 缓存
+frontend/.prettiercache
 
 # 日志
 frontend/npm-debug.log*
@@ -327,6 +337,71 @@ fixtures/
 # 性能测试结果
 performance_results/
 benchmark_results/
+
+# ====================
+# AI/ML 模型文件
+# ====================
+# 大型模型文件
+*.bin
+*.safetensors
+*.ckpt
+*.pth
+*.onnx
+*.pb
+*.tflite
+*.h5
+*.hdf5
+
+# 模型缓存目录
+.cache/
+transformers_cache/
+torch_cache/
+tensorflow_cache/
+
+# ====================
+# 向量数据库
+# ====================
+# Qdrant 数据
+qdrant_storage/
+qdrant_data/
+*.qdrant
+
+# Chroma 数据
+chroma_db/
+chroma_data/
+
+# Pinecone 数据
+pinecone_data/
+
+# ====================
+# 文档处理
+# ====================
+# 临时文档处理文件
+processed_docs/
+doc_cache/
+ocr_cache/
+
+# ====================
+# 开发工具
+# ====================
+# 本地开发配置
+local_config/
+dev_config/
+
+# 调试文件
+debug/
+debug_*/
+
+# ====================
+# 部署相关
+# ====================
+# 部署脚本生成的文件
+deploy_*/
+deployment_cache/
+
+# 生产环境配置
+prod_config/
+production/
 
 # ====================
 # 临时忽略（开发时可能需要）
