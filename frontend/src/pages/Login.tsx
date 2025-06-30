@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { authApi, LoginRequest } from '../services/auth'
 
 const Login: React.FC = () => {
-  const [formData, setFormData] = useState<LoginRequest>({
+  const [formData, setFormData] = useState({
     username: '',
     password: ''
   })
@@ -20,19 +19,25 @@ const Login: React.FC = () => {
     setError('')
 
     try {
-      const response = await authApi.login(formData)
-      
-      // 保存认证信息
-      login(response.access_token, {
-        id: response.user_id,
-        username: response.username,
-        email: '', // API 没有返回邮箱，需要额外获取
-        role: response.role
-      })
-      
-      navigate('/dashboard')
+      // 临时使用模拟登录，避免后端依赖
+      if (formData.username && formData.password) {
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // 保存认证信息
+        login('mock-token', {
+          id: '1',
+          username: formData.username,
+          email: `${formData.username}@example.com`,
+          role: 'user'
+        })
+        
+        navigate('/dashboard')
+      } else {
+        setError('请输入用户名和密码')
+      }
     } catch (err: any) {
-      setError(err.response?.data?.detail || '登录失败，请检查用户名和密码')
+      setError('登录失败，请检查用户名和密码')
     } finally {
       setLoading(false)
     }
@@ -46,6 +51,13 @@ const Login: React.FC = () => {
     }))
   }
 
+  const handleDemoLogin = () => {
+    setFormData({
+      username: 'demo',
+      password: 'demo123'
+    })
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -53,6 +65,9 @@ const Login: React.FC = () => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             登录到 MetaBox
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            本地智能知识库系统
+          </p>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -72,9 +87,10 @@ const Login: React.FC = () => {
                 name="username"
                 type="text"
                 required
-                className="input-field mt-1"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={formData.username}
                 onChange={handleInputChange}
+                placeholder="请输入用户名"
               />
             </div>
             
@@ -87,25 +103,34 @@ const Login: React.FC = () => {
                 name="password"
                 type="password"
                 required
-                className="input-field mt-1"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={formData.password}
                 onChange={handleInputChange}
+                placeholder="请输入密码"
               />
             </div>
           </div>
 
-          <div>
+          <div className="space-y-3">
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {loading ? '登录中...' : '登录'}
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              使用演示账号
             </button>
           </div>
 
           <div className="text-center">
-            <Link to="/register" className="text-primary-600 hover:text-primary-500">
+            <Link to="/register" className="text-blue-600 hover:text-blue-500">
               还没有账号？立即注册
             </Link>
           </div>

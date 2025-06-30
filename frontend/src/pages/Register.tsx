@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { authApi, RegisterRequest } from '../services/auth'
+import { useAuth } from '../contexts/AuthContext'
 
 const Register: React.FC = () => {
-  const [formData, setFormData] = useState<RegisterRequest & { confirmPassword: string }>({
+  const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
@@ -12,6 +12,7 @@ const Register: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
+  const { login } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,22 +20,33 @@ const Register: React.FC = () => {
     setLoading(true)
     setError('')
 
+    // 验证密码
     if (formData.password !== formData.confirmPassword) {
-      setError('密码确认不匹配')
+      setError('两次输入的密码不一致')
       setLoading(false)
       return
     }
 
     try {
-      const { confirmPassword, ...registerData } = formData
-      await authApi.register(registerData)
-      
-      // 注册成功后跳转到登录页
-      navigate('/login', { 
-        state: { message: '注册成功，请登录' }
-      })
+      // 临时使用模拟注册，避免后端依赖
+      if (formData.username && formData.email && formData.password) {
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // 保存认证信息
+        login('mock-token', {
+          id: '1',
+          username: formData.username,
+          email: formData.email,
+          role: 'user'
+        })
+        
+        navigate('/dashboard')
+      } else {
+        setError('请填写所有必填字段')
+      }
     } catch (err: any) {
-      setError(err.response?.data?.detail || '注册失败，请重试')
+      setError('注册失败，请稍后重试')
     } finally {
       setLoading(false)
     }
@@ -55,6 +67,9 @@ const Register: React.FC = () => {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             注册 MetaBox 账号
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            创建您的本地智能知识库账户
+          </p>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -74,9 +89,10 @@ const Register: React.FC = () => {
                 name="username"
                 type="text"
                 required
-                className="input-field mt-1"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={formData.username}
                 onChange={handleInputChange}
+                placeholder="请输入用户名"
               />
             </div>
             
@@ -89,9 +105,10 @@ const Register: React.FC = () => {
                 name="email"
                 type="email"
                 required
-                className="input-field mt-1"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={formData.email}
                 onChange={handleInputChange}
+                placeholder="请输入邮箱"
               />
             </div>
             
@@ -104,9 +121,10 @@ const Register: React.FC = () => {
                 name="password"
                 type="password"
                 required
-                className="input-field mt-1"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={formData.password}
                 onChange={handleInputChange}
+                placeholder="请输入密码"
               />
             </div>
             
@@ -119,9 +137,10 @@ const Register: React.FC = () => {
                 name="confirmPassword"
                 type="password"
                 required
-                className="input-field mt-1"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
+                placeholder="请再次输入密码"
               />
             </div>
           </div>
@@ -130,14 +149,14 @@ const Register: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {loading ? '注册中...' : '注册'}
             </button>
           </div>
 
           <div className="text-center">
-            <Link to="/login" className="text-primary-600 hover:text-primary-500">
+            <Link to="/login" className="text-blue-600 hover:text-blue-500">
               已有账号？立即登录
             </Link>
           </div>

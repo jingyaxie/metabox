@@ -24,7 +24,7 @@ const Layout: React.FC = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <h1 className="text-xl font-bold text-primary-600">MetaBox</h1>
+                <h1 className="text-xl font-bold text-blue-600">MetaBox</h1>
               </div>
               
               <div className="ml-10 flex items-baseline space-x-4">
@@ -32,7 +32,7 @@ const Layout: React.FC = () => {
                   onClick={() => navigate('/dashboard')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     isActive('/dashboard')
-                      ? 'bg-primary-100 text-primary-700'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -43,7 +43,7 @@ const Layout: React.FC = () => {
                   onClick={() => navigate('/kb')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     isActive('/kb')
-                      ? 'bg-primary-100 text-primary-700'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -54,7 +54,7 @@ const Layout: React.FC = () => {
                   onClick={() => navigate('/chat')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     isActive('/chat')
-                      ? 'bg-primary-100 text-primary-700'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -62,10 +62,21 @@ const Layout: React.FC = () => {
                 </button>
                 
                 <button
+                  onClick={() => navigate('/enhanced-retrieval')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${
+                    isActive('/enhanced-retrieval')
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  增强检索
+                </button>
+                
+                <button
                   onClick={() => navigate('/plugins')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     isActive('/plugins')
-                      ? 'bg-primary-100 text-primary-700'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -77,7 +88,7 @@ const Layout: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-700">{user?.username}</span>
-                <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
                     {user?.username?.charAt(0).toUpperCase()}
                   </span>
@@ -89,7 +100,7 @@ const Layout: React.FC = () => {
                   onClick={() => navigate('/settings')}
                   className={`px-3 py-2 rounded-md text-sm font-medium ${
                     isActive('/settings')
-                      ? 'bg-primary-100 text-primary-700'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                   }`}
                 >
