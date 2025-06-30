@@ -5,9 +5,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+import logging
 
 from app.core.config import settings
 from app.api import router
+from app.plugins.init_plugins import init_plugins
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # 创建 FastAPI 应用实例
 app = FastAPI(
@@ -33,6 +39,17 @@ if os.path.exists("uploads"):
 
 # 包含路由
 app.include_router(router, prefix="/api")
+
+@app.on_event("startup")
+async def startup_event():
+    """应用启动事件"""
+    logger.info("MetaBox API 启动中...")
+    
+    # 初始化插件系统
+    if init_plugins():
+        logger.info("插件系统初始化成功")
+    else:
+        logger.error("插件系统初始化失败")
 
 # 健康检查端点
 @app.get("/health")
