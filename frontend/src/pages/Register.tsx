@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { authApi, RegisterRequest } from '../services/auth'
 
 const Register: React.FC = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterRequest & { confirmPassword: string }>({
     username: '',
     email: '',
     password: '',
@@ -25,14 +26,26 @@ const Register: React.FC = () => {
     }
 
     try {
-      // TODO: 实现注册逻辑
-      console.log('注册:', formData)
-      navigate('/login')
-    } catch (err) {
-      setError('注册失败，请重试')
+      const { confirmPassword, ...registerData } = formData
+      await authApi.register(registerData)
+      
+      // 注册成功后跳转到登录页
+      navigate('/login', { 
+        state: { message: '注册成功，请登录' }
+      })
+    } catch (err: any) {
+      setError(err.response?.data?.detail || '注册失败，请重试')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
   }
 
   return (
@@ -63,7 +76,7 @@ const Register: React.FC = () => {
                 required
                 className="input-field mt-1"
                 value={formData.username}
-                onChange={(e) => setFormData({...formData, username: e.target.value})}
+                onChange={handleInputChange}
               />
             </div>
             
@@ -78,7 +91,7 @@ const Register: React.FC = () => {
                 required
                 className="input-field mt-1"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={handleInputChange}
               />
             </div>
             
@@ -93,7 +106,7 @@ const Register: React.FC = () => {
                 required
                 className="input-field mt-1"
                 value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={handleInputChange}
               />
             </div>
             
@@ -108,7 +121,7 @@ const Register: React.FC = () => {
                 required
                 className="input-field mt-1"
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                onChange={handleInputChange}
               />
             </div>
           </div>

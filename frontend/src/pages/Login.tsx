@@ -1,10 +1,13 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { authApi, LoginRequest } from '../services/auth'
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+  const [formData, setFormData] = useState<LoginRequest>({
+    username: '',
+    password: ''
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   
@@ -17,14 +20,30 @@ const Login: React.FC = () => {
     setError('')
 
     try {
-      // TODO: 实现登录逻辑
-      console.log('登录:', { username, password })
+      const response = await authApi.login(formData)
+      
+      // 保存认证信息
+      login(response.access_token, {
+        id: response.user_id,
+        username: response.username,
+        email: '', // API 没有返回邮箱，需要额外获取
+        role: response.role
+      })
+      
       navigate('/dashboard')
-    } catch (err) {
-      setError('登录失败，请检查用户名和密码')
+    } catch (err: any) {
+      setError(err.response?.data?.detail || '登录失败，请检查用户名和密码')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
   }
 
   return (
@@ -54,8 +73,8 @@ const Login: React.FC = () => {
                 type="text"
                 required
                 className="input-field mt-1"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={formData.username}
+                onChange={handleInputChange}
               />
             </div>
             
@@ -69,8 +88,8 @@ const Login: React.FC = () => {
                 type="password"
                 required
                 className="input-field mt-1"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleInputChange}
               />
             </div>
           </div>
