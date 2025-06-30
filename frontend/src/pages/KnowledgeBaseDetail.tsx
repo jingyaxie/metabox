@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import apiClient from '../services/api'
 import RecallTestPanel from '../components/RecallTestPanel'
+import SmartConfigPanel from '../components/SmartConfigPanel'
 
 interface KnowledgeBase {
   id: string
@@ -32,6 +33,8 @@ const KnowledgeBaseDetail: React.FC = () => {
   const [images, setImages] = useState<ImageVector[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'chunks' | 'images' | 'recall'>('overview')
+  const [showSmartConfig, setShowSmartConfig] = useState(false)
+  const [docText, setDocText] = useState('')
 
   useEffect(() => {
     if (id) {
@@ -194,6 +197,30 @@ const KnowledgeBaseDetail: React.FC = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow p-6 mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="font-semibold text-lg text-primary-700">智能分割与向量化参数推荐</div>
+                    <button
+                      className="text-xs text-blue-500 hover:underline"
+                      onClick={() => setShowSmartConfig(v => !v)}
+                    >
+                      {showSmartConfig ? '收起' : '展开配置'}
+                    </button>
+                  </div>
+                  {showSmartConfig && (
+                    <div className="mt-4">
+                      <textarea
+                        className="w-full border rounded p-2 mb-4 text-sm"
+                        rows={6}
+                        placeholder="粘贴或输入待分析的文档内容..."
+                        value={docText}
+                        onChange={e => setDocText(e.target.value)}
+                      />
+                      <SmartConfigPanel docText={docText} />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
