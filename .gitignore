@@ -1,0 +1,337 @@
+# MetaBox 项目 .gitignore 文件
+
+# ====================
+# 环境变量文件
+# ====================
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# ====================
+# 前端相关 (React/Node.js)
+# ====================
+# 依赖
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# 构建输出
+frontend/dist/
+frontend/build/
+frontend/.next/
+frontend/out/
+
+# 缓存
+frontend/.cache/
+frontend/.parcel-cache/
+frontend/.vite/
+
+# 日志
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/lerna-debug.log*
+frontend/.pnpm-debug.log*
+
+# 运行时数据
+frontend/pids
+frontend/*.pid
+frontend/*.seed
+frontend/*.pid.lock
+
+# 覆盖率目录
+frontend/coverage/
+frontend/.nyc_output
+
+# 编辑器
+frontend/.vscode/
+frontend/.idea/
+frontend/*.swp
+frontend/*.swo
+frontend/*~
+
+# ====================
+# 后端相关 (Python)
+# ====================
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 分发/打包
+backend/dist/
+backend/build/
+*.egg-info/
+*.egg
+
+# 虚拟环境
+backend/venv/
+backend/env/
+backend/.venv/
+backend/.env/
+backend/env.bak/
+backend/venv.bak/
+
+# 测试
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.tox/
+backend/.nox/
+backend/coverage.xml
+backend*.cover
+backend/.hypothesis/
+
+# 日志
+backend/*.log
+backend/logs/
+
+# 数据库
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+
+# 缓存
+backend/.mypy_cache/
+backend/.dmypy.json
+backend/dmypy.json
+
+# Jupyter Notebook
+backend.ipynb_checkpoints
+
+# IPython
+backend/profile_default/
+backend/ipython_config.py
+
+# pyenv
+backend/.python-version
+
+# pipenv
+backend/Pipfile.lock
+
+# PEP 582
+backend/__pypackages__/
+
+# Celery
+backend/celerybeat-schedule
+backend/celerybeat.pid
+
+# SageMath parsed files
+backend*.sage.py
+
+# Spyder project settings
+backend.spyderproject
+backend.spyproject
+
+# Rope project settings
+backend.ropeproject
+
+# mkdocs documentation
+backend/site/
+
+# mypy
+backend.mypy_cache/
+backend.dmypy.json
+backenddmypy.json
+
+# Pyre type checker
+backend.pyre/
+
+# ====================
+# Docker 相关
+# ====================
+# Docker 构建缓存
+.dockerignore
+docker-compose.override.yml
+
+# Docker 数据卷
+docker/data/
+docker/volumes/
+
+# ====================
+# 数据库相关
+# ====================
+# PostgreSQL
+*.sql
+*.dump
+*.backup
+
+# Qdrant
+qdrant_data/
+qdrant_storage/
+
+# Redis
+dump.rdb
+
+# ====================
+# 文件上传
+# ====================
+uploads/
+uploads/*
+!uploads/.gitkeep
+
+# 临时文件
+temp/
+tmp/
+*.tmp
+*.temp
+
+# ====================
+# 日志文件
+# ====================
+logs/
+*.log
+*.log.*
+
+# ====================
+# 系统文件
+# ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ====================
+# IDE 和编辑器
+# ====================
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ====================
+# 备份文件
+# ====================
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.swo
+*.swp
+
+# ====================
+# 压缩文件
+# ====================
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# ====================
+# 证书和密钥
+# ====================
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+
+# ====================
+# 项目特定
+# ====================
+# 备份目录
+backup_*/
+backups/
+
+# 监控数据
+monitoring/
+metrics/
+
+# 插件数据
+plugins/data/
+plugins/cache/
+
+# 向量模型缓存
+models/
+model_cache/
+
+# 测试数据
+test_data/
+fixtures/
+
+# 性能测试结果
+performance_results/
+benchmark_results/
+
+# ====================
+# 临时忽略（开发时可能需要）
+# ====================
+# 取消注释以下行以忽略特定文件（开发时使用）
+# frontend/src/config/local.ts
+# backend/app/config/local.py
+# *.local 

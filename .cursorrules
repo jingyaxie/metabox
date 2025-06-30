@@ -1,0 +1,89 @@
+# 本地智能知识库系统开发规范
+
+## 项目结构
+```
+MetaBox/
+├── frontend/                 # React + TypeScript + Tailwind
+│   ├── src/
+│   │   ├── components/       # 可复用组件
+│   │   ├── pages/           # 页面组件
+│   │   ├── hooks/           # 自定义 Hooks
+│   │   ├── stores/          # Zustand 状态管理
+│   │   ├── services/        # API 服务
+│   │   ├── utils/           # 工具函数
+│   │   └── types/           # TypeScript 类型
+│   ├── tests/               # Jest + RTL 测试
+│   └── package.json
+├── backend/                  # FastAPI + Python
+│   ├── app/
+│   │   ├── api/             # API 路由
+│   │   ├── core/            # 核心配置
+│   │   ├── models/          # 数据模型
+│   │   ├── services/        # 业务逻辑
+│   │   └── utils/           # 工具函数
+│   ├── tests/               # Pytest 测试
+│   └── requirements.txt
+├── docker/                   # Docker 配置
+├── scripts/                  # 部署脚本
+├── docs/                     # 项目文档
+└── tests/                    # 集成测试
+```
+
+## 代码规范
+
+### 前端规范
+- 使用 TypeScript，严格类型检查
+- 组件使用函数式 + Hooks
+- 状态管理使用 Zustand
+- 样式使用 Tailwind CSS
+- 文件命名：组件 PascalCase，工具 camelCase
+- 必须写单元测试，覆盖率 > 80%
+
+### 后端规范
+- 使用 FastAPI + SQLAlchemy
+- 遵循 RESTful API 设计
+- 使用 Pydantic 进行数据验证
+- 异步处理，使用 async/await
+- 完整的错误处理和日志记录
+- 必须写单元测试，覆盖率 > 80%
+
+## 数据库设计
+- PostgreSQL：用户、知识库、权限等结构化数据
+- Qdrant：文本和图片向量存储
+- 使用 Alembic 进行数据库迁移
+
+## API 设计
+- 统一响应格式：{ success, data, message }
+- JWT 认证，RBAC 权限控制
+- 支持文件上传，最大 100MB
+- 聊天接口支持流式响应
+
+## 测试要求
+- 前端：Jest + React Testing Library
+- 后端：Pytest + FastAPI TestClient
+- 集成测试：API 端到端测试
+- 性能测试：并发用户测试
+
+## 部署规范
+- Docker Compose 一键部署
+- 支持 GPU 容器（可选）
+- 环境变量配置
+- 健康检查和监控
+
+## 文档要求
+- README.md：项目介绍和快速开始
+- API 文档：使用 FastAPI 自动生成
+- 部署文档：Docker 部署步骤
+- 开发文档：开发环境搭建
+
+## Git 规范
+- 分支：main, develop, feature/*
+- 提交信息：feat/fix/docs/style/refactor/test/chore
+- 代码审查：PR 必须通过审查
+- 版本发布：语义化版本号
+
+## 安全要求
+- 密码加密存储
+- API 限流和防刷
+- 文件上传安全检查
+- 敏感信息环境变量配置
