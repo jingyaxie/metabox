@@ -10,6 +10,7 @@ import KnowledgeBaseDetail from './pages/KnowledgeBaseDetail'
 import Chat from './pages/Chat'
 import Settings from './pages/Settings'
 import Plugins from './pages/Plugins'
+import EnhancedRetrieval from './pages/EnhancedRetrieval'
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
               <Route path="chat" element={<Chat />} />
               <Route path="settings" element={<Settings />} />
               <Route path="plugins" element={<Plugins />} />
+              <Route path="enhanced-retrieval" element={<EnhancedRetrieval />} />
             </Route>
             
             {/* 404 页面 */}

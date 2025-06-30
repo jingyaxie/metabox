@@ -9,6 +9,7 @@ from .chat import router as chat_router
 from .plugins import router as plugins_router
 from .health import router as health_router
 from .smart_config import router as smart_config_router
+from .enhanced_retrieval import router as enhanced_retrieval_router
 
 # 创建主路由
 router = APIRouter()
@@ -20,4 +21,5 @@ router.include_router(kb_router, prefix="/kb", tags=["知识库"])
 router.include_router(chat_router, prefix="/chat", tags=["聊天"])
 router.include_router(plugins_router, prefix="/plugins", tags=["插件管理"])
 router.include_router(health_router, prefix="/health", tags=["健康检查"])
-router.include_router(smart_config_router, prefix="/kb", tags=["智能配置"]) 
+router.include_router(smart_config_router, prefix="/kb", tags=["智能配置"])
+router.include_router(enhanced_retrieval_router, tags=["增强检索"]) 

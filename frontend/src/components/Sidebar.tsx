@@ -8,6 +8,7 @@ const Sidebar: React.FC = () => {
     { path: '/dashboard', label: '仪表板', icon: '📊' },
     { path: '/chat', label: '聊天', icon: '💬' },
     { path: '/kb', label: '知识库', icon: '📚' },
+    { path: '/enhanced-retrieval', label: '增强检索', icon: '🔍' },
   ]
 
   return (
