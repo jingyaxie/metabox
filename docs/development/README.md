@@ -46,6 +46,8 @@ npm run lint
 
 ### 4. 后端开发环境
 
+> **强制要求：所有后端依赖必须安装在 backend/venv 虚拟环境目录下，严禁污染系统环境。**
+
 ```bash
 cd backend
 
@@ -54,8 +56,8 @@ python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # 或 venv\Scripts\activate  # Windows
 
-# 安装依赖
-pip install -r requirements.txt
+# 安装依赖（推荐开发用 requirements-dev.txt）
+pip install -r requirements-dev.txt
 
 # 启动开发服务器
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
