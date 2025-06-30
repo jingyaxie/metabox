@@ -1,134 +1,231 @@
-from typing import Dict, List, Optional, Tuple
+"""
+智能配置服务
+基于RAG优化技术实现的高级配置管理
+"""
+from typing import Dict, List, Optional, Tuple, Any
 import re
 import json
+import time
+import uuid
 from dataclasses import dataclass
 from enum import Enum
+import logging
+from datetime import datetime
 
 from app.schemas.smart_config import (
     DocumentType,
     SmartConfigRequest,
     SmartConfigResponse,
     ParameterRecommendation,
-    ValidationResult
+    ValidationResult,
+    ConfigTemplate,
+    ConfigTemplateCreate,
+    ConfigTemplateUpdate,
+    BatchConfigRequest,
+    BatchConfigResponse,
+    PerformanceMetrics,
+    ConfigPreview,
+    AdvancedConfig
 )
+from app.services.text_splitter import (
+    TextSplitterFactory,
+    DocumentTypeDetector as BaseDocumentTypeDetector,
+    SmartParameterRecommender as BaseSmartParameterRecommender,
+    SmartConfigManager as BaseSmartConfigManager
+)
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentTypeDetector:
     """文档类型检测器"""
     
-    @staticmethod
-    def detect_document_type(content: str) -> DocumentType:
+    def __init__(self):
+        self.type_patterns = {
+            DocumentType.CODE: [
+                r'def\s+\w+', r'class\s+\w+', r'import\s+', r'from\s+', r'return\s+',
+                r'if\s+__name__', r'try:', r'except:', r'for\s+', r'while\s+',
+                r'function\s+', r'const\s+', r'let\s+', r'var\s+', r'public\s+class',
+                r'private\s+', r'protected\s+', r'interface\s+', r'abstract\s+class'
+            ],
+            DocumentType.TECHNICAL: [
+                r'API', r'endpoint', r'database', r'schema', r'table', r'column',
+                r'configuration', r'setup', r'installation', r'deployment',
+                r'接口', r'参数', r'配置', r'部署', r'安装', r'数据库', r'表结构'
+            ],
+            DocumentType.ACADEMIC: [
+                r'abstract', r'introduction', r'methodology', r'conclusion',
+                r'references', r'bibliography', r'figure', r'table', r'摘要',
+                r'引言', r'方法', r'结论', r'参考文献', r'图表'
+            ],
+            DocumentType.NEWS: [
+                r'breaking', r'news', r'report', r'announcement', r'press release',
+                r'interview', r'exclusive', r'update', r'本报讯', r'记者',
+                r'时间', r'地点', r'报道'
+            ],
+            DocumentType.LITERATURE: [
+                r'chapter', r'scene', r'dialogue', r'character', r'plot',
+                r'narrative', r'story', r'novel', r'章节', r'场景', r'对话',
+                r'角色', r'情节', r'叙述'
+            ],
+            DocumentType.MARKDOWN: [
+                r'^#\s+', r'^##\s+', r'^###\s+', r'^####\s+', r'^#####\s+',
+                r'^######\s+', r'\*\*.*?\*\*', r'\*.*?\*', r'`.*?`', r'\[.*?\]\(.*?\)'
+            ],
+            DocumentType.MANUAL: [
+                r'使用说明', r'操作步骤', r'注意事项', r'FAQ', r'常见问题',
+                r'user guide', r'manual', r'tutorial', r'step by step',
+                r'instructions', r'how to'
+            ]
+        }
+    
+    def detect_document_type(self, content: str) -> DocumentType:
         """检测文档类型"""
         content_lower = content.lower()
+        scores = {}
         
-        # 检测代码文档
-        if any(keyword in content_lower for keyword in [
-            'function', 'class', 'def ', 'import ', 'from ', 'return',
-            'if __name__', 'try:', 'except:', 'for ', 'while '
-        ]):
-            return DocumentType.CODE
+        for doc_type, patterns in self.type_patterns.items():
+            score = 0
+            for pattern in patterns:
+                matches = len(re.findall(pattern, content, re.IGNORECASE))
+                score += matches * 10  # 每个匹配加10分
+            
+            # 特殊规则
+            if doc_type == DocumentType.CODE:
+                # 代码文档通常有特定的缩进和结构
+                code_lines = len([line for line in content.split('\n') 
+                                if re.match(r'^\s*(def|class|import|from|if|for|while|try|except)', line)])
+                if code_lines > len(content.split('\n')) * 0.1:  # 超过10%的代码行
+                    score += 50
+            
+            elif doc_type == DocumentType.MARKDOWN:
+                # Markdown文档有特定的标记
+                markdown_indicators = ['#', '**', '*', '`', '[', ']', '![']
+                if any(indicator in content for indicator in markdown_indicators):
+                    score += 30
+            
+            scores[doc_type] = score
         
-        # 检测技术文档
-        if any(keyword in content_lower for keyword in [
-            'api', 'endpoint', 'database', 'schema', 'table', 'column',
-            'configuration', 'setup', 'installation', 'deployment'
-        ]):
-            return DocumentType.TECHNICAL
+        # 返回得分最高的类型
+        if scores:
+            return max(scores.items(), key=lambda x: x[1])[0]
         
-        # 检测学术论文
-        if any(keyword in content_lower for keyword in [
-            'abstract', 'introduction', 'methodology', 'conclusion',
-            'references', 'bibliography', 'figure', 'table'
-        ]):
-            return DocumentType.ACADEMIC
-        
-        # 检测新闻文章
-        if any(keyword in content_lower for keyword in [
-            'breaking', 'news', 'report', 'announcement', 'press release',
-            'interview', 'exclusive', 'update'
-        ]):
-            return DocumentType.NEWS
-        
-        # 检测小说/文学
-        if any(keyword in content_lower for keyword in [
-            'chapter', 'scene', 'dialogue', 'character', 'plot',
-            'narrative', 'story', 'novel'
-        ]):
-            return DocumentType.LITERATURE
-        
-        # 默认为一般文档
         return DocumentType.GENERAL
+    
+    def get_confidence_score(self, content: str, doc_type: DocumentType) -> float:
+        """获取类型置信度"""
+        scores = {}
+        for dt, patterns in self.type_patterns.items():
+            score = sum(len(re.findall(pattern, content, re.IGNORECASE)) for pattern in patterns)
+            scores[dt] = score
+        
+        total_score = sum(scores.values())
+        if total_score == 0:
+            return 0.5  # 默认置信度
+        
+        return min(1.0, scores.get(doc_type, 0) / total_score * 2)
 
 
 class ParameterRecommender:
     """参数推荐器"""
     
-    @staticmethod
-    def get_recommendations(
-        document_type: DocumentType,
-        content_length: int,
-        content: str
-    ) -> ParameterRecommendation:
-        """获取参数推荐"""
-        
-        # 基础推荐配置
-        base_configs = {
+    def __init__(self):
+        self.base_configs = {
             DocumentType.CODE: {
                 "chunk_size": 512,
                 "chunk_overlap": 128,
                 "embedding_model": "text-embedding-3-small",
                 "similarity_threshold": 0.7,
-                "max_tokens": 2000
+                "max_tokens": 2000,
+                "splitter_type": "recursive",
+                "use_parent_child": False
             },
             DocumentType.TECHNICAL: {
                 "chunk_size": 1024,
                 "chunk_overlap": 256,
                 "embedding_model": "text-embedding-3-small",
                 "similarity_threshold": 0.75,
-                "max_tokens": 3000
+                "max_tokens": 3000,
+                "splitter_type": "recursive",
+                "use_parent_child": True
             },
             DocumentType.ACADEMIC: {
                 "chunk_size": 2048,
                 "chunk_overlap": 512,
                 "embedding_model": "text-embedding-3-large",
                 "similarity_threshold": 0.8,
-                "max_tokens": 4000
+                "max_tokens": 4000,
+                "splitter_type": "semantic",
+                "use_parent_child": True
             },
             DocumentType.NEWS: {
                 "chunk_size": 768,
                 "chunk_overlap": 192,
                 "embedding_model": "text-embedding-3-small",
                 "similarity_threshold": 0.7,
-                "max_tokens": 2500
+                "max_tokens": 2500,
+                "splitter_type": "recursive",
+                "use_parent_child": False
             },
             DocumentType.LITERATURE: {
                 "chunk_size": 1536,
                 "chunk_overlap": 384,
                 "embedding_model": "text-embedding-3-small",
                 "similarity_threshold": 0.65,
-                "max_tokens": 3500
+                "max_tokens": 3500,
+                "splitter_type": "recursive",
+                "use_parent_child": True
+            },
+            DocumentType.MARKDOWN: {
+                "chunk_size": 1024,
+                "chunk_overlap": 256,
+                "embedding_model": "text-embedding-3-small",
+                "similarity_threshold": 0.75,
+                "max_tokens": 3000,
+                "splitter_type": "markdown_header",
+                "use_parent_child": True
+            },
+            DocumentType.MANUAL: {
+                "chunk_size": 1024,
+                "chunk_overlap": 256,
+                "embedding_model": "text-embedding-3-small",
+                "similarity_threshold": 0.75,
+                "max_tokens": 3000,
+                "splitter_type": "markdown_header",
+                "use_parent_child": True
             },
             DocumentType.GENERAL: {
                 "chunk_size": 1024,
                 "chunk_overlap": 256,
                 "embedding_model": "text-embedding-3-small",
                 "similarity_threshold": 0.7,
-                "max_tokens": 3000
+                "max_tokens": 3000,
+                "splitter_type": "recursive",
+                "use_parent_child": False
             }
         }
+    
+    def get_recommendations(
+        self,
+        document_type: DocumentType,
+        content_length: int,
+        content: str
+    ) -> ParameterRecommendation:
+        """获取参数推荐"""
         
         # 获取基础配置
-        base_config = base_configs[document_type]
+        base_config = self.base_configs[document_type].copy()
         
         # 根据内容长度调整参数
-        adjusted_config = ParameterRecommender._adjust_by_content_length(
-            base_config, content_length
-        )
+        adjusted_config = self._adjust_by_content_length(base_config, content_length)
         
         # 根据内容特征进一步优化
-        optimized_config = ParameterRecommender._optimize_by_content_features(
-            adjusted_config, content
-        )
+        optimized_config = self._optimize_by_content_features(adjusted_config, content)
+        
+        # 设置父子块参数
+        if optimized_config.get("use_parent_child", False):
+            optimized_config["parent_chunk_size"] = optimized_config["chunk_size"] * 2
+            optimized_config["child_chunk_size"] = optimized_config["chunk_size"] // 2
         
         return ParameterRecommendation(
             chunk_size=optimized_config["chunk_size"],
@@ -136,14 +233,14 @@ class ParameterRecommender:
             embedding_model=optimized_config["embedding_model"],
             similarity_threshold=optimized_config["similarity_threshold"],
             max_tokens=optimized_config["max_tokens"],
-            reasoning=f"基于文档类型 '{document_type.value}' 和内容长度 {content_length} 字符推荐"
+            reasoning=self._generate_reasoning(document_type, content_length, optimized_config),
+            splitter_type=optimized_config["splitter_type"],
+            use_parent_child=optimized_config.get("use_parent_child", False),
+            parent_chunk_size=optimized_config.get("parent_chunk_size"),
+            child_chunk_size=optimized_config.get("child_chunk_size")
         )
     
-    @staticmethod
-    def _adjust_by_content_length(
-        config: Dict,
-        content_length: int
-    ) -> Dict:
+    def _adjust_by_content_length(self, config: Dict, content_length: int) -> Dict:
         """根据内容长度调整参数"""
         adjusted = config.copy()
         
@@ -154,17 +251,13 @@ class ParameterRecommender:
             adjusted["max_tokens"] = max(1000, adjusted["max_tokens"] // 2)
         elif content_length > 10000:
             # 长文档：增加chunk_size，调整overlap
-            adjusted["chunk_size"] = min(4096, adjusted["chunk_size"] * 1.5)
-            adjusted["chunk_overlap"] = min(1024, adjusted["chunk_overlap"] * 1.5)
-            adjusted["max_tokens"] = min(8000, adjusted["max_tokens"] * 1.5)
+            adjusted["chunk_size"] = min(4096, int(adjusted["chunk_size"] * 1.5))
+            adjusted["chunk_overlap"] = min(1024, int(adjusted["chunk_overlap"] * 1.5))
+            adjusted["max_tokens"] = min(8000, int(adjusted["max_tokens"] * 1.5))
         
         return adjusted
     
-    @staticmethod
-    def _optimize_by_content_features(
-        config: Dict,
-        content: str
-    ) -> Dict:
+    def _optimize_by_content_features(self, config: Dict, content: str) -> Dict:
         """根据内容特征优化参数"""
         optimized = config.copy()
         
@@ -177,7 +270,7 @@ class ParameterRecommender:
         if code_density > 0.3:
             # 高代码密度：减小chunk_size，增加overlap
             optimized["chunk_size"] = max(256, optimized["chunk_size"] // 2)
-            optimized["chunk_overlap"] = min(512, optimized["chunk_overlap"] * 1.5)
+            optimized["chunk_overlap"] = min(512, int(optimized["chunk_overlap"] * 1.5))
         
         # 检测段落长度
         paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
@@ -185,16 +278,51 @@ class ParameterRecommender:
         
         if avg_paragraph_length > 500:
             # 长段落：增加chunk_size
-            optimized["chunk_size"] = min(4096, optimized["chunk_size"] * 1.2)
+            optimized["chunk_size"] = min(4096, int(optimized["chunk_size"] * 1.2))
+        
+        # 检测标题密度
+        header_count = len(re.findall(r'^#{1,6}\s+', content, re.MULTILINE))
+        if header_count > 5:
+            # 高标题密度：使用markdown分割器
+            optimized["splitter_type"] = "markdown_header"
+            optimized["use_parent_child"] = True
         
         return optimized
+    
+    def _generate_reasoning(self, doc_type: DocumentType, content_length: int, config: Dict) -> str:
+        """生成推荐理由"""
+        reasons = [f"基于文档类型 '{doc_type.value}'"]
+        
+        if content_length < 1000:
+            reasons.append("短文档优化")
+        elif content_length > 10000:
+            reasons.append("长文档优化")
+        
+        if config.get("use_parent_child", False):
+            reasons.append("启用父子块分割")
+        
+        if config["splitter_type"] == "markdown_header":
+            reasons.append("使用Markdown标题分割")
+        elif config["splitter_type"] == "semantic":
+            reasons.append("使用语义分割")
+        
+        return "，".join(reasons)
 
 
 class ConfigValidator:
     """配置验证器"""
     
-    @staticmethod
+    def __init__(self):
+        self.valid_models = [
+            "text-embedding-3-small",
+            "text-embedding-3-large", 
+            "text-embedding-ada-002",
+            "bge-m3",
+            "gte-large"
+        ]
+    
     def validate_config(
+        self,
         chunk_size: int,
         chunk_overlap: int,
         embedding_model: str,
@@ -210,6 +338,10 @@ class ConfigValidator:
             errors.append("chunk_size 不能小于 100")
         elif chunk_size > 8192:
             errors.append("chunk_size 不能大于 8192")
+        elif chunk_size < 256:
+            warnings.append("chunk_size 过小可能影响语义完整性")
+        elif chunk_size > 4096:
+            warnings.append("chunk_size 过大可能影响检索精度")
         
         # 验证chunk_overlap
         if chunk_overlap < 0:
@@ -218,14 +350,11 @@ class ConfigValidator:
             errors.append("chunk_overlap 不能大于或等于 chunk_size")
         elif chunk_overlap > chunk_size * 0.5:
             warnings.append("chunk_overlap 过大可能导致重复内容")
+        elif chunk_overlap < chunk_size * 0.1:
+            warnings.append("chunk_overlap 过小可能导致信息丢失")
         
         # 验证embedding_model
-        valid_models = [
-            "text-embedding-3-small",
-            "text-embedding-3-large",
-            "text-embedding-ada-002"
-        ]
-        if embedding_model not in valid_models:
+        if embedding_model not in self.valid_models:
             errors.append(f"不支持的embedding模型: {embedding_model}")
         
         # 验证similarity_threshold
@@ -241,11 +370,101 @@ class ConfigValidator:
             errors.append("max_tokens 不能小于 100")
         elif max_tokens > 16000:
             errors.append("max_tokens 不能大于 16000")
+        elif max_tokens < 1000:
+            warnings.append("max_tokens 过小可能限制回答长度")
         
         return ValidationResult(
             is_valid=len(errors) == 0,
             errors=errors,
             warnings=warnings
+        )
+
+
+class ConfigTemplateManager:
+    """配置模板管理器"""
+    
+    def __init__(self):
+        self.templates: Dict[str, ConfigTemplate] = {}
+    
+    async def create_template(self, template_data: ConfigTemplateCreate) -> ConfigTemplate:
+        """创建配置模板"""
+        template_id = str(uuid.uuid4())
+        template = ConfigTemplate(
+            id=template_id,
+            name=template_data.name,
+            description=template_data.description,
+            document_type=template_data.document_type,
+            config=template_data.config,
+            created_at=datetime.utcnow().isoformat(),
+            updated_at=datetime.utcnow().isoformat()
+        )
+        self.templates[template_id] = template
+        return template
+    
+    async def get_template(self, template_id: str) -> Optional[ConfigTemplate]:
+        """获取配置模板"""
+        return self.templates.get(template_id)
+    
+    async def list_templates(self) -> List[ConfigTemplate]:
+        """列出所有模板"""
+        return list(self.templates.values())
+    
+    async def update_template(self, template_id: str, update_data: ConfigTemplateUpdate) -> Optional[ConfigTemplate]:
+        """更新配置模板"""
+        template = self.templates.get(template_id)
+        if not template:
+            return None
+        
+        if update_data.name is not None:
+            template.name = update_data.name
+        if update_data.description is not None:
+            template.description = update_data.description
+        if update_data.document_type is not None:
+            template.document_type = update_data.document_type
+        if update_data.config is not None:
+            template.config = update_data.config
+        
+        template.updated_at = datetime.utcnow().isoformat()
+        return template
+    
+    async def delete_template(self, template_id: str) -> bool:
+        """删除配置模板"""
+        if template_id in self.templates:
+            del self.templates[template_id]
+            return True
+        return False
+
+
+class PerformanceAnalyzer:
+    """性能分析器"""
+    
+    def analyze_performance(self, content: str, config: Dict[str, Any]) -> PerformanceMetrics:
+        """分析性能指标"""
+        chunk_size = config.get("chunk_size", 1024)
+        chunk_overlap = config.get("chunk_overlap", 256)
+        
+        # 估算分块数量
+        effective_chunk_size = chunk_size - chunk_overlap
+        chunk_count = max(1, len(content) // effective_chunk_size)
+        
+        # 估算处理时间（毫秒）
+        processing_time = len(content) * 0.1 + chunk_count * 50  # 简化估算
+        
+        # 估算内存使用（MB）
+        memory_usage = len(content) / 1024 / 1024 * 2 + chunk_count * 0.1
+        
+        # 估算存储需求（MB）
+        storage_estimate = chunk_count * 0.5  # 每个向量约0.5MB
+        
+        # 估算向量数量
+        vector_count = chunk_count
+        
+        return PerformanceMetrics(
+            processing_time=processing_time / 1000,  # 转换为秒
+            memory_usage=memory_usage,
+            storage_estimate=storage_estimate,
+            vector_count=vector_count,
+            chunk_count=chunk_count
         )
 
 
@@ -256,6 +475,8 @@ class SmartConfigService:
         self.detector = DocumentTypeDetector()
         self.recommender = ParameterRecommender()
         self.validator = ConfigValidator()
+        self.template_manager = ConfigTemplateManager()
+        self.performance_analyzer = PerformanceAnalyzer()
     
     async def get_smart_config(
         self,
@@ -265,6 +486,7 @@ class SmartConfigService:
         
         # 检测文档类型
         document_type = self.detector.detect_document_type(request.content)
+        confidence = self.detector.get_confidence_score(request.content, document_type)
         
         # 计算内容长度
         content_length = len(request.content)
@@ -273,6 +495,13 @@ class SmartConfigService:
         recommendation = self.recommender.get_recommendations(
             document_type, content_length, request.content
         )
+        
+        # 应用用户偏好
+        if request.user_preferences:
+            # 更新推荐参数
+            for key, value in request.user_preferences.items():
+                if hasattr(recommendation, key):
+                    setattr(recommendation, key, value)
         
         # 验证推荐参数
         validation = self.validator.validate_config(
@@ -287,7 +516,8 @@ class SmartConfigService:
             document_type=document_type,
             content_length=content_length,
             recommendation=recommendation,
-            validation=validation
+            validation=validation,
+            confidence=confidence
         )
     
     async def validate_custom_config(
@@ -302,4 +532,145 @@ class SmartConfigService:
         return self.validator.validate_config(
             chunk_size, chunk_overlap, embedding_model,
             similarity_threshold, max_tokens
-        ) 
+        )
+    
+    async def create_template(self, template_data: ConfigTemplateCreate) -> ConfigTemplate:
+        """创建配置模板"""
+        return await self.template_manager.create_template(template_data)
+    
+    async def get_template(self, template_id: str) -> Optional[ConfigTemplate]:
+        """获取配置模板"""
+        return await self.template_manager.get_template(template_id)
+    
+    async def list_templates(self) -> List[ConfigTemplate]:
+        """列出所有模板"""
+        return await self.template_manager.list_templates()
+    
+    async def update_template(self, template_id: str, update_data: ConfigTemplateUpdate) -> Optional[ConfigTemplate]:
+        """更新配置模板"""
+        return await self.template_manager.update_template(template_id, update_data)
+    
+    async def delete_template(self, template_id: str) -> bool:
+        """删除配置模板"""
+        return await self.template_manager.delete_template(template_id)
+    
+    async def apply_template(self, template_id: str, content: str) -> SmartConfigResponse:
+        """应用配置模板"""
+        template = await self.get_template(template_id)
+        if not template:
+            raise ValueError("模板不存在")
+        
+        # 使用模板配置创建请求
+        request = SmartConfigRequest(
+            content=content,
+            user_preferences=template.config
+        )
+        
+        return await self.get_smart_config(request)
+    
+    async def batch_configure(self, batch_request: BatchConfigRequest) -> BatchConfigResponse:
+        """批量配置"""
+        results = []
+        success_count = 0
+        failed_count = 0
+        errors = []
+        
+        for doc_id in batch_request.document_ids:
+            try:
+                # 这里应该从数据库获取文档内容
+                # 暂时使用模拟内容
+                content = f"Document content for {doc_id}"
+                
+                if batch_request.template_id:
+                    # 使用模板
+                    result = await self.apply_template(batch_request.template_id, content)
+                else:
+                    # 使用自定义配置
+                    request = SmartConfigRequest(
+                        content=content,
+                        user_preferences=batch_request.config
+                    )
+                    result = await self.get_smart_config(request)
+                
+                results.append({
+                    "doc_id": doc_id,
+                    "success": True,
+                    "config": result.dict()
+                })
+                success_count += 1
+                
+            except Exception as e:
+                error_msg = f"文档 {doc_id} 配置失败: {str(e)}"
+                errors.append(error_msg)
+                results.append({
+                    "doc_id": doc_id,
+                    "success": False,
+                    "error": error_msg
+                })
+                failed_count += 1
+        
+        return BatchConfigResponse(
+            success_count=success_count,
+            failed_count=failed_count,
+            errors=errors,
+            results=results
+        )
+    
+    async def get_config_preview(self, content: str, config: Dict[str, Any]) -> ConfigPreview:
+        """获取配置预览"""
+        # 这里应该实际执行分割来生成预览
+        # 暂时使用模拟数据
+        chunk_size = config.get("chunk_size", 1024)
+        chunks = []
+        
+        # 简单的分块预览
+        for i in range(0, len(content), chunk_size):
+            chunk = content[i:i + chunk_size]
+            if chunk.strip():
+                chunks.append(chunk[:100] + "..." if len(chunk) > 100 else chunk)
+        
+        # 分析性能
+        performance = self.performance_analyzer.analyze_performance(content, config)
+        
+        # 计算质量评分
+        quality_score = self._calculate_quality_score(content, config)
+        
+        return ConfigPreview(
+            chunks=chunks[:5],  # 只显示前5个分块
+            chunk_count=len(chunks),
+            avg_chunk_size=sum(len(chunk) for chunk in chunks) / len(chunks) if chunks else 0,
+            performance_metrics=performance,
+            quality_score=quality_score
+        )
+    
+    def _calculate_quality_score(self, content: str, config: Dict[str, Any]) -> float:
+        """计算质量评分"""
+        score = 0.5  # 基础分数
+        
+        # 根据分块大小评分
+        chunk_size = config.get("chunk_size", 1024)
+        if 256 <= chunk_size <= 2048:
+            score += 0.2
+        elif chunk_size < 256:
+            score -= 0.1
+        elif chunk_size > 2048:
+            score -= 0.1
+        
+        # 根据重叠大小评分
+        chunk_overlap = config.get("chunk_overlap", 256)
+        overlap_ratio = chunk_overlap / chunk_size if chunk_size > 0 else 0
+        if 0.1 <= overlap_ratio <= 0.3:
+            score += 0.2
+        elif overlap_ratio < 0.1:
+            score -= 0.1
+        elif overlap_ratio > 0.5:
+            score -= 0.1
+        
+        # 根据相似度阈值评分
+        similarity_threshold = config.get("similarity_threshold", 0.7)
+        if 0.6 <= similarity_threshold <= 0.8:
+            score += 0.1
+        elif similarity_threshold < 0.5:
+            score -= 0.1
+        
+        return min(1.0, max(0.0, score)) 
