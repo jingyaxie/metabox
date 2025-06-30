@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# MetaBox 部署脚本
-# 使用方法: ./scripts/deploy.sh [start|stop|restart|logs|clean]
+# MetaBox 生产环境部署脚本
+# 支持 Docker Compose 一键部署
 
 set -e
 
@@ -10,10 +10,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# 项目根目录
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+NC='\033[0m'
 
 # 日志函数
 log_info() {
@@ -32,184 +29,117 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# 检查 Docker 和 Docker Compose
-check_dependencies() {
-    log_info "检查依赖..."
-    
-    if ! command -v docker &> /dev/null; then
-        log_error "Docker 未安装，请先安装 Docker"
+# 检查必需参数
+check_required_params() {
+    if [ -z "$DOMAIN" ]; then
+        log_error "请设置 DOMAIN 环境变量"
         exit 1
     fi
     
-    if ! command -v docker-compose &> /dev/null; then
-        log_error "Docker Compose 未安装，请先安装 Docker Compose"
+    if [ -z "$SECRET_KEY" ]; then
+        log_error "请设置 SECRET_KEY 环境变量"
+        exit 1
+    fi
+}
+
+# 检查环境
+check_environment() {
+    log_info "检查部署环境..."
+    
+    # 检查 Docker
+    if ! docker info &> /dev/null; then
+        log_error "Docker 未运行"
         exit 1
     fi
     
-    log_success "依赖检查通过"
-}
-
-# 创建必要的目录
-create_directories() {
-    log_info "创建必要的目录..."
-    
-    mkdir -p "$PROJECT_ROOT/uploads"
-    mkdir -p "$PROJECT_ROOT/logs"
-    mkdir -p "$PROJECT_ROOT/nginx/conf.d"
-    
-    log_success "目录创建完成"
-}
-
-# 设置环境变量
-setup_environment() {
-    log_info "设置环境变量..."
-    
-    if [ ! -f "$PROJECT_ROOT/.env" ]; then
-        log_warning "未找到 .env 文件，创建默认配置..."
-        cat > "$PROJECT_ROOT/.env" << EOF
-# MetaBox 环境配置
-APP_NAME=MetaBox
-APP_VERSION=1.0.0
-DEBUG=false
-
-# 数据库配置
-DATABASE_URL=postgresql://kb_user:kb_password@postgres:5432/metabox
-QDRANT_URL=http://qdrant:6333
-
-# JWT 配置
-JWT_SECRET_KEY=your-secret-key-change-in-production
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# 文件上传配置
-MAX_FILE_SIZE=104857600
-UPLOAD_DIR=uploads
-ALLOWED_EXTENSIONS=["pdf","doc","docx","txt","md","jpg","jpeg","png","gif"]
-
-# Redis 配置
-REDIS_URL=redis://redis:6379
-CACHE_TTL=3600
-
-# 日志配置
-LOG_LEVEL=INFO
-LOG_FILE=logs/metabox.log
-
-# CORS 配置
-CORS_ORIGINS=["http://localhost:3000","http://localhost:8080"]
-CORS_ALLOW_CREDENTIALS=true
-EOF
-        log_success "默认 .env 文件创建完成"
-    else
-        log_info ".env 文件已存在"
+    # 检查 Docker Compose
+    if ! docker-compose version &> /dev/null; then
+        log_error "Docker Compose 未安装"
+        exit 1
     fi
+    
+    # 检查环境变量文件
+    if [ ! -f ".env" ]; then
+        log_error ".env 文件不存在，请先配置环境变量"
+        exit 1
+    fi
+    
+    log_success "环境检查通过"
+}
+
+# 构建镜像
+build_images() {
+    log_info "构建 Docker 镜像..."
+    
+    docker-compose build --no-cache
+    
+    log_success "镜像构建完成"
 }
 
 # 启动服务
 start_services() {
-    log_info "启动 MetaBox 服务..."
+    log_info "启动服务..."
     
-    cd "$PROJECT_ROOT"
+    # 启动数据库服务
+    docker-compose up -d postgres redis qdrant
     
-    # 拉取最新镜像
-    log_info "拉取 Docker 镜像..."
-    docker-compose pull
+    # 等待数据库启动
+    log_info "等待数据库启动..."
+    sleep 15
     
-    # 构建镜像
-    log_info "构建服务镜像..."
-    docker-compose build --no-cache
+    # 运行数据库迁移
+    log_info "运行数据库迁移..."
+    docker-compose run --rm backend python -m alembic upgrade head
     
-    # 启动服务
-    log_info "启动所有服务..."
-    docker-compose up -d
+    # 启动应用服务
+    docker-compose up -d backend frontend nginx
     
-    # 等待服务启动
-    log_info "等待服务启动..."
-    sleep 30
-    
-    # 检查服务状态
-    check_services
-    
-    log_success "MetaBox 启动完成！"
-    log_info "访问地址: http://localhost"
-    log_info "API 文档: http://localhost/docs"
-    log_info "默认管理员账户: admin / admin123"
+    log_success "服务启动完成"
 }
 
 # 停止服务
 stop_services() {
-    log_info "停止 MetaBox 服务..."
-    
-    cd "$PROJECT_ROOT"
+    log_info "停止服务..."
     docker-compose down
-    
     log_success "服务已停止"
 }
 
 # 重启服务
 restart_services() {
-    log_info "重启 MetaBox 服务..."
-    
-    stop_services
-    sleep 5
-    start_services
-}
-
-# 查看日志
-show_logs() {
-    log_info "显示服务日志..."
-    
-    cd "$PROJECT_ROOT"
-    docker-compose logs -f
+    log_info "重启服务..."
+    docker-compose restart
+    log_success "服务重启完成"
 }
 
 # 检查服务状态
 check_services() {
     log_info "检查服务状态..."
     
-    cd "$PROJECT_ROOT"
-    
     # 检查容器状态
-    if docker-compose ps | grep -q "Up"; then
-        log_success "所有服务运行正常"
-        
-        # 检查健康状态
-        if curl -f http://localhost/health &> /dev/null; then
-            log_success "健康检查通过"
-        else
-            log_warning "健康检查失败，服务可能还在启动中"
-        fi
+    docker-compose ps
+    
+    # 检查健康状态
+    if curl -s https://${DOMAIN}/health > /dev/null; then
+        log_success "后端服务健康检查通过"
     else
-        log_error "部分服务启动失败"
-        docker-compose ps
-        exit 1
+        log_warning "后端服务健康检查失败"
+    fi
+    
+    if curl -s https://${DOMAIN} > /dev/null; then
+        log_success "前端服务访问正常"
+    else
+        log_warning "前端服务访问失败"
     fi
 }
 
-# 清理资源
-clean_resources() {
-    log_warning "清理所有资源（包括数据）..."
+# 显示日志
+show_logs() {
+    local service=${1:-"all"}
     
-    read -p "确定要删除所有数据吗？(y/N): " -n 1 -r
-    echo
-    
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        cd "$PROJECT_ROOT"
-        
-        # 停止并删除容器
-        docker-compose down -v
-        
-        # 删除镜像
-        docker-compose down --rmi all
-        
-        # 删除卷
-        docker volume prune -f
-        
-        # 删除网络
-        docker network prune -f
-        
-        log_success "资源清理完成"
+    if [ "$service" = "all" ]; then
+        docker-compose logs -f
     else
-        log_info "取消清理操作"
+        docker-compose logs -f $service
     fi
 }
 
@@ -217,118 +147,162 @@ clean_resources() {
 backup_data() {
     log_info "备份数据..."
     
-    cd "$PROJECT_ROOT"
-    
     # 创建备份目录
-    BACKUP_DIR="backup_$(date +%Y%m%d_%H%M%S)"
-    mkdir -p "$BACKUP_DIR"
+    mkdir -p backups/$(date +%Y%m%d_%H%M%S)
     
     # 备份数据库
-    log_info "备份 PostgreSQL 数据库..."
-    docker-compose exec -T postgres pg_dump -U kb_user metabox > "$BACKUP_DIR/database.sql"
+    docker-compose exec postgres pg_dump -U metabox metabox > backups/$(date +%Y%m%d_%H%M%S)/database.sql
     
     # 备份上传文件
-    log_info "备份上传文件..."
-    if [ -d "uploads" ]; then
-        cp -r uploads "$BACKUP_DIR/"
-    fi
+    tar -czf backups/$(date +%Y%m%d_%H%M%S)/uploads.tar.gz uploads/
     
-    # 备份配置文件
-    log_info "备份配置文件..."
-    cp .env "$BACKUP_DIR/" 2>/dev/null || true
-    
-    log_success "数据备份完成: $BACKUP_DIR"
+    log_success "数据备份完成"
 }
 
 # 恢复数据
 restore_data() {
-    log_info "恢复数据..."
+    local backup_dir=$1
     
-    if [ -z "$1" ]; then
+    if [ -z "$backup_dir" ]; then
         log_error "请指定备份目录"
         exit 1
     fi
     
-    BACKUP_DIR="$1"
-    
-    if [ ! -d "$BACKUP_DIR" ]; then
-        log_error "备份目录不存在: $BACKUP_DIR"
-        exit 1
-    fi
-    
-    cd "$PROJECT_ROOT"
+    log_info "恢复数据..."
     
     # 恢复数据库
-    if [ -f "$BACKUP_DIR/database.sql" ]; then
-        log_info "恢复 PostgreSQL 数据库..."
-        docker-compose exec -T postgres psql -U kb_user -d metabox < "$BACKUP_DIR/database.sql"
-    fi
+    docker-compose exec -T postgres psql -U metabox metabox < $backup_dir/database.sql
     
     # 恢复上传文件
-    if [ -d "$BACKUP_DIR/uploads" ]; then
-        log_info "恢复上传文件..."
-        rm -rf uploads
-        cp -r "$BACKUP_DIR/uploads" .
-    fi
+    tar -xzf $backup_dir/uploads.tar.gz -C ./
     
     log_success "数据恢复完成"
 }
 
-# 显示帮助信息
+# 更新部署
+update_deployment() {
+    log_info "更新部署..."
+    
+    # 拉取最新代码
+    git pull origin main
+    
+    # 重新构建镜像
+    build_images
+    
+    # 重启服务
+    restart_services
+    
+    log_success "部署更新完成"
+}
+
+# 清理环境
+cleanup() {
+    log_info "清理环境..."
+    
+    # 停止服务
+    stop_services
+    
+    # 清理镜像
+    docker system prune -f
+    
+    # 清理日志
+    rm -rf logs/*
+    
+    log_success "环境清理完成"
+}
+
+# 完整部署
+full_deploy() {
+    log_info "开始完整部署..."
+    
+    check_required_params
+    check_environment
+    build_images
+    start_services
+    
+    # 等待服务启动
+    sleep 10
+    
+    check_services
+    
+    log_success "部署完成！"
+    log_info "访问地址:"
+    log_info "  前端: https://${DOMAIN}"
+    log_info "  后端API: https://${DOMAIN}/api"
+    log_info "  API文档: https://${DOMAIN}/docs"
+    log_info "  健康检查: https://${DOMAIN}/health"
+}
+
+# 显示帮助
 show_help() {
-    echo "MetaBox 部署脚本"
+    echo "MetaBox 生产环境部署脚本"
     echo ""
-    echo "使用方法: $0 [命令]"
+    echo "用法: $0 [命令]"
     echo ""
     echo "命令:"
-    echo "  start     启动所有服务"
-    echo "  stop      停止所有服务"
-    echo "  restart   重启所有服务"
-    echo "  logs      显示服务日志"
-    echo "  status    检查服务状态"
-    echo "  clean     清理所有资源（包括数据）"
-    echo "  backup    备份数据"
-    echo "  restore   恢复数据"
-    echo "  help      显示此帮助信息"
+    echo "  deploy    - 完整部署"
+    echo "  build     - 构建镜像"
+    echo "  start     - 启动服务"
+    echo "  stop      - 停止服务"
+    echo "  restart   - 重启服务"
+    echo "  status    - 检查状态"
+    echo "  logs      - 查看日志 [服务名]"
+    echo "  backup    - 备份数据"
+    echo "  restore   - 恢复数据 <备份目录>"
+    echo "  update    - 更新部署"
+    echo "  clean     - 清理环境"
+    echo "  help      - 显示帮助"
+    echo ""
+    echo "环境变量:"
+    echo "  DOMAIN    - 域名"
+    echo "  SECRET_KEY - 密钥"
     echo ""
     echo "示例:"
-    echo "  $0 start"
-    echo "  $0 logs"
-    echo "  $0 backup"
-    echo "  $0 restore backup_20231201_120000"
+    echo "  $0 deploy"
+    echo "  $0 status"
+    echo "  $0 logs backend"
 }
 
 # 主函数
 main() {
     case "${1:-help}" in
-        start)
-            check_dependencies
-            create_directories
-            setup_environment
+        "deploy")
+            full_deploy
+            ;;
+        "build")
+            check_required_params
+            build_images
+            ;;
+        "start")
+            check_required_params
             start_services
             ;;
-        stop)
+        "stop")
             stop_services
             ;;
-        restart)
+        "restart")
             restart_services
             ;;
-        logs)
-            show_logs
-            ;;
-        status)
+        "status")
+            check_required_params
             check_services
             ;;
-        clean)
-            clean_resources
+        "logs")
+            show_logs $2
             ;;
-        backup)
+        "backup")
             backup_data
             ;;
-        restore)
-            restore_data "$2"
+        "restore")
+            restore_data $2
             ;;
-        help|*)
+        "update")
+            update_deployment
+            ;;
+        "clean")
+            cleanup
+            ;;
+        "help"|*)
             show_help
             ;;
     esac
