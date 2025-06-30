@@ -7,6 +7,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
 import KnowledgeBase from './pages/KnowledgeBase'
+import KnowledgeBaseDetail from './pages/KnowledgeBaseDetail'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -38,6 +39,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <KnowledgeBase />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/kb/:id" 
+            element={
+              <ProtectedRoute>
+                <KnowledgeBaseDetail />
               </ProtectedRoute>
             } 
           />

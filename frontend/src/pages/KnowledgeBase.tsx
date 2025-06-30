@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import apiClient from '../services/api'
+import { useNavigate } from 'react-router-dom'
 
 interface KnowledgeBase {
   id: string
@@ -15,6 +16,7 @@ const KnowledgeBase: React.FC = () => {
   const [error, setError] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ name: '', description: '', type: 'text' })
+  const navigate = useNavigate()
 
   const fetchKbs = async () => {
     setLoading(true)
@@ -90,7 +92,7 @@ const KnowledgeBase: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {kbs.map(kb => (
-            <div key={kb.id} className="card relative">
+            <div key={kb.id} className="card relative cursor-pointer hover:shadow-lg transition" onClick={() => navigate(`/kb/${kb.id}`)}>
               <div className="absolute right-4 top-4">
                 <button className="text-red-500 hover:underline" onClick={() => handleDelete(kb.id)}>删除</button>
               </div>
