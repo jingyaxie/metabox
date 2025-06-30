@@ -354,4 +354,108 @@ class TextSplitterFactory:
             return ParentChildTextSplitter(**kwargs)
         else:
             # 普通文档，使用递归分割
-            return RecursiveCharacterTextSplitter(**kwargs) 
+            return RecursiveCharacterTextSplitter(**kwargs)
+
+
+class DocumentTypeDetector:
+    """文档类型智能检测器"""
+    def __init__(self):
+        self.type_patterns = {
+            "markdown": [r"^#\s+", r"^##\s+", r"^###\s+"],
+            "code": [r"```[\w]*\n", r"import\s+", r"def\s+", r"class\s+"],
+            "technical": [r"API", r"接口", r"参数", r"配置"],
+            "academic": [r"摘要", r"Abstract", r"参考文献", r"References"],
+            "news": [r"本报讯", r"记者", r"时间", r"地点"],
+            "manual": [r"使用说明", r"操作步骤", r"注意事项", r"FAQ"]
+        }
+    def detect_document_type(self, text: str) -> Dict[str, float]:
+        scores = {}
+        for doc_type, patterns in self.type_patterns.items():
+            score = sum(len(re.findall(pattern, text, re.IGNORECASE)) for pattern in patterns)
+            scores[doc_type] = score / max(len(text), 1) * 1000
+        return scores
+    def get_primary_type(self, text: str) -> str:
+        scores = self.detect_document_type(text)
+        return max(scores.items(), key=lambda x: x[1])[0]
+
+
+class SmartParameterRecommender:
+    """智能参数推荐引擎"""
+    def __init__(self):
+        self.recommendations = {
+            "markdown": {
+                "splitter": "markdown_header",
+                "chunk_size": 512,
+                "chunk_overlap": 64,
+                "embedding_model": "bge-m3",
+                "use_parent_child": True
+            },
+            "code": {
+                "splitter": "recursive",
+                "chunk_size": 256,
+                "chunk_overlap": 32,
+                "embedding_model": "code-embedding-model",
+                "use_parent_child": False
+            },
+            "technical": {
+                "splitter": "recursive",
+                "chunk_size": 384,
+                "chunk_overlap": 48,
+                "embedding_model": "bge-m3",
+                "use_parent_child": True
+            },
+            "academic": {
+                "splitter": "semantic",
+                "chunk_size": 768,
+                "chunk_overlap": 96,
+                "embedding_model": "bge-m3",
+                "use_parent_child": True
+            },
+            "news": {
+                "splitter": "recursive",
+                "chunk_size": 256,
+                "chunk_overlap": 32,
+                "embedding_model": "text-embedding-ada-002",
+                "use_parent_child": False
+            },
+            "manual": {
+                "splitter": "markdown_header",
+                "chunk_size": 384,
+                "chunk_overlap": 48,
+                "embedding_model": "bge-m3",
+                "use_parent_child": True
+            }
+        }
+    def get_recommendation(self, doc_type: str, text_length: int = 0) -> Dict[str, Any]:
+        base_config = self.recommendations.get(doc_type, self.recommendations["technical"]).copy()
+        if text_length > 10000:
+            base_config["chunk_size"] = min(int(base_config["chunk_size"] * 1.5), 1024)
+            base_config["chunk_overlap"] = min(int(base_config["chunk_overlap"] * 1.2), 128)
+        elif text_length < 1000:
+            base_config["chunk_size"] = max(int(base_config["chunk_size"] * 0.7), 128)
+            base_config["chunk_overlap"] = max(int(base_config["chunk_overlap"] * 0.8), 16)
+        return base_config
+
+
+class SmartConfigManager:
+    """智能配置管理器"""
+    def __init__(self):
+        self.type_detector = DocumentTypeDetector()
+        self.param_recommender = SmartParameterRecommender()
+    def get_smart_config(self, text: str, user_preferences: Dict = None) -> Dict[str, Any]:
+        doc_type = self.type_detector.get_primary_type(text)
+        config = self.param_recommender.get_recommendation(doc_type, len(text))
+        if user_preferences:
+            config.update(user_preferences)
+        config["detected_type"] = doc_type
+        config["confidence"] = self.type_detector.detect_document_type(text)[doc_type]
+        return config
+    def validate_config(self, config: Dict[str, Any]) -> (bool, List[str]):
+        errors = []
+        if config.get("chunk_size", 0) <= 0:
+            errors.append("chunk_size 必须大于0")
+        if config.get("chunk_overlap", 0) >= config.get("chunk_size", 1):
+            errors.append("chunk_overlap 必须小于 chunk_size")
+        if config.get("chunk_overlap", 0) < 0:
+            errors.append("chunk_overlap 不能为负数")
+        return len(errors) == 0, errors 

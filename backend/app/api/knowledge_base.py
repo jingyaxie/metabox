@@ -1,7 +1,7 @@
 """
 知识库管理 API
 """
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -9,6 +9,8 @@ from typing import List, Optional
 from app.core.database import get_db
 from app.services.auth_service import AuthService
 from app.services.knowledge_base_service import KnowledgeBaseService
+from app.schemas.knowledge_base import SmartConfigRequest, SmartConfigResponse
+from app.services.text_splitter import SmartConfigManager
 
 router = APIRouter()
 security = HTTPBearer()
@@ -192,4 +194,18 @@ async def upload_image(
             detail=result["message"]
         )
     
-    return result 
+    return result
+
+@router.post("/smart-config", response_model=SmartConfigResponse)
+def get_smart_config(request: SmartConfigRequest = Body(...)):
+    """智能分割与向量化参数推荐接口"""
+    manager = SmartConfigManager()
+    config = manager.get_smart_config(request.text, request.user_preferences)
+    valid, errors = manager.validate_config(config)
+    return SmartConfigResponse(
+        detected_type=config["detected_type"],
+        confidence=config["confidence"],
+        config=config,
+        errors=errors if not valid else None,
+        valid=valid
+    ) 
