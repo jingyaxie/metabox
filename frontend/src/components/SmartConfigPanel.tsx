@@ -5,7 +5,7 @@ import { Input } from './ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Switch } from './ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
-import { Textarea } from './ui/textarea'
+
 import apiClient from '../services/api'
 
 interface SmartConfigPanelProps {
@@ -51,7 +51,6 @@ const SmartConfigPanel: React.FC<SmartConfigPanelProps> = ({
   
   const [preview, setPreview] = useState<ConfigPreview | null>(null)
   const [templates, setTemplates] = useState<ConfigTemplate[]>([])
-  const [activeTab, setActiveTab] = useState('config')
 
   // 获取智能配置推荐
   const getSmartConfig = async () => {
