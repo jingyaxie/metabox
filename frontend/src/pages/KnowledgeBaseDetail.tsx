@@ -218,7 +218,11 @@ const KnowledgeBaseDetail: React.FC = () => {
                         value={docText}
                         onChange={e => setDocText(e.target.value)}
                       />
-                      <SmartConfigPanel docText={docText} />
+                      <SmartConfigPanel 
+                        content={docText} 
+                        onConfigChange={(config) => console.log('Config changed:', config)}
+                        onApply={(config) => console.log('Config applied:', config)}
+                      />
                     </div>
                   )}
                 </div>

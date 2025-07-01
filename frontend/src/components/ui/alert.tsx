@@ -1,9 +1,28 @@
 import React from "react";
 
-export function Alert({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-2 rounded" {...props}>{children}</div>;
+interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'destructive';
 }
 
-export function AlertDescription({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className="text-yellow-800 text-sm" {...props}>{children}</div>;
+export function Alert({ className = "", variant = 'default', children, ...props }: AlertProps) {
+  const variants = {
+    default: "border border-gray-200 bg-white text-gray-900",
+    destructive: "border border-red-200 bg-red-50 text-red-900"
+  };
+  
+  const combinedClasses = `rounded-lg border p-4 ${variants[variant]} ${className}`;
+  
+  return (
+    <div className={combinedClasses} {...props}>
+      {children}
+    </div>
+  );
+}
+
+export function AlertDescription({ className = "", children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
+  return (
+    <p className={`text-sm ${className}`} {...props}>
+      {children}
+    </p>
+  );
 } 

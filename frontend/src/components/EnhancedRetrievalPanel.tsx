@@ -9,8 +9,8 @@ import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
-import { Loader2, Settings, TestTube, BarChart3, Filter, Search } from 'lucide-react';
-import { api } from '../services/api';
+import { Loader2, Settings, TestTube, BarChart3, Search } from 'lucide-react';
+import apiClient from '../services/api';
 
 interface PipelineConfig {
   enable_query_preprocessing: boolean;
@@ -57,7 +57,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
 
   const loadConfig = async () => {
     try {
-      const response = await api.get('/enhanced-retrieval/config');
+      const response = await apiClient.get('/enhanced-retrieval/config');
       if (response.data.success) {
         setConfig(response.data.data);
       }
@@ -69,7 +69,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const response = await api.get('/enhanced-retrieval/stats');
+      const response = await apiClient.get('/enhanced-retrieval/stats');
       if (response.data.success) {
         setStats(response.data.data);
       }
@@ -80,7 +80,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
 
   const loadAvailableFilters = async () => {
     try {
-      const response = await api.get('/enhanced-retrieval/available-filters');
+      const response = await apiClient.get('/enhanced-retrieval/available-filters');
       if (response.data.success) {
         setAvailableFilters(response.data.data.available_filters);
       }
@@ -92,7 +92,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
   const updateConfig = async (newConfig: Partial<PipelineConfig>) => {
     try {
       setLoading(true);
-      const response = await api.post('/enhanced-retrieval/config', {
+      const response = await apiClient.post('/enhanced-retrieval/config', {
         ...config,
         ...newConfig
       });
@@ -113,7 +113,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await api.post('/enhanced-retrieval/test-query-expansion', null, {
+      const response = await apiClient.post('/enhanced-retrieval/test-query-expansion', null, {
         params: {
           query: testQuery,
           strategy: config?.expansion_strategy || 'hybrid',
@@ -157,7 +157,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await api.post('/enhanced-retrieval/test-metadata-filtering', testDocuments, {
+      const response = await apiClient.post('/enhanced-retrieval/test-metadata-filtering', testDocuments, {
         params: {
           predefined_filters: selectedFilters
         }
@@ -272,7 +272,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue>选择策略</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="hybrid">混合策略</SelectItem>
@@ -325,7 +325,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue>选择策略</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="weighted_sum">加权求和</SelectItem>
@@ -365,7 +365,7 @@ const EnhancedRetrievalPanel: React.FC = () => {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue>选择策略</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="hybrid">混合重排序</SelectItem>

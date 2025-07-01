@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from './ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Textarea } from './ui/textarea'
-import api from '../services/api'
+import apiClient from '../services/api'
 
 interface SmartConfigPanelProps {
   content: string
@@ -62,7 +62,7 @@ const SmartConfigPanel: React.FC<SmartConfigPanelProps> = ({
 
     setLoading(true)
     try {
-      const response = await api.post('/kb/smart-config', {
+      const response = await apiClient.post('/kb/smart-config', {
         content: content,
         advanced_config: config
       })
@@ -91,7 +91,7 @@ const SmartConfigPanel: React.FC<SmartConfigPanelProps> = ({
 
     setPreviewLoading(true)
     try {
-      const response = await api.post('/kb/smart-config/preview', {
+      const response = await apiClient.post('/kb/smart-config/preview', {
         content: content,
         config: config
       })
@@ -111,7 +111,7 @@ const SmartConfigPanel: React.FC<SmartConfigPanelProps> = ({
   // 获取模板列表
   const getTemplates = async () => {
     try {
-      const response = await api.get('/kb/smart-config/templates')
+      const response = await apiClient.get('/kb/smart-config/templates')
       if (response.data.success) {
         setTemplates(response.data.data)
       }
@@ -129,7 +129,7 @@ const SmartConfigPanel: React.FC<SmartConfigPanelProps> = ({
 
     setLoading(true)
     try {
-      const response = await api.post(`/kb/smart-config/templates/${templateId}/apply`, {
+      const response = await apiClient.post(`/kb/smart-config/templates/${templateId}/apply`, {
         content: content
       })
 
@@ -154,7 +154,7 @@ const SmartConfigPanel: React.FC<SmartConfigPanelProps> = ({
     if (!templateName) return
 
     try {
-      const response = await api.post('/kb/smart-config/templates', {
+      const response = await apiClient.post('/kb/smart-config/templates', {
         name: templateName,
         description: '用户自定义配置模板',
         config: config
@@ -212,10 +212,18 @@ const SmartConfigPanel: React.FC<SmartConfigPanelProps> = ({
 
           <div>
             <label className="block text-sm font-medium mb-2">嵌入模型</label>
-            <Select value={config.embedding_model} onChange={(e) => setConfig({...config, embedding_model: e.target.value})}>
-              <option value="bge-m3">BGE-M3</option>
-              <option value="text-embedding-ada-002">OpenAI Ada-002</option>
-              <option value="text-embedding-3-small">OpenAI 3-Small</option>
+            <Select 
+              value={config.embedding_model} 
+              onValueChange={(value) => setConfig({...config, embedding_model: value})}
+            >
+              <SelectTrigger>
+                <SelectValue>选择模型</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bge-m3">BGE-M3</SelectItem>
+                <SelectItem value="text-embedding-3-small">OpenAI Text Embedding 3 Small</SelectItem>
+                <SelectItem value="text-embedding-3-large">OpenAI Text Embedding 3 Large</SelectItem>
+              </SelectContent>
             </Select>
           </div>
 
@@ -242,20 +250,20 @@ const SmartConfigPanel: React.FC<SmartConfigPanelProps> = ({
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch 
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium">混合检索</label>
+            <Switch
               checked={config.use_hybrid}
-              onChange={(e) => setConfig({...config, use_hybrid: e.target.checked})}
+              onCheckedChange={(checked) => setConfig({...config, use_hybrid: checked})}
             />
-            <label className="text-sm">启用混合检索</label>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch 
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-medium">Markdown解析</label>
+            <Switch
               checked={config.use_markdown}
-              onChange={(e) => setConfig({...config, use_markdown: e.target.checked})}
+              onCheckedChange={(checked) => setConfig({...config, use_markdown: checked})}
             />
-            <label className="text-sm">启用Markdown解析</label>
           </div>
         </CardContent>
       </Card>
