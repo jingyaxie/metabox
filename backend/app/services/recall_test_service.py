@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from fastapi import HTTPException, status
 from app.models.recall_test import RecallTest, RecallTestCase
-from app.models.knowledge_base import KnowledgeBase, TextChunk, ImageVector
+from app.models.knowledge_base import KnowledgeBase, KnowledgeBaseChunk as TextChunk, KnowledgeBaseImage as ImageVector
 from app.schemas.recall_test import (
     RecallTestCreate, RecallTestUpdate, RecallTestCaseCreate, RecallTestCaseUpdate, BatchTestCaseImport, RecallTestRunRequest
 )

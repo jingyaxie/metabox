@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch, AsyncMock
 from sqlalchemy.orm import Session
 
 from app.services.vector_service import VectorService
-from app.models.knowledge_base import TextChunk, ImageVector
+from app.models.knowledge_base import KnowledgeBaseChunk as TextChunk, KnowledgeBaseImage as ImageVector
 from app.core.config import settings
 
 

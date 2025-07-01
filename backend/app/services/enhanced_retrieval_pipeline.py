@@ -9,8 +9,8 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 
-from .query_processor import QueryProcessor, QueryType
-from .multi_query_expander import MultiQueryExpander, ExpansionStrategy
+from .query_processor import QueryProcessor
+from .multi_query_expander import MultiQueryExpander, ExpansionStrategy, QueryType
 from .hybrid_retriever import HybridRetriever, FusionStrategy
 from .reranker import Reranker, RerankStrategy, RerankResult
 from .metadata_filter import MetadataFilter, FilterCondition, FilterOperator

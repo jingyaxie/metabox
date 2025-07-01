@@ -10,7 +10,7 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, Settings, TestTube, BarChart3, Filter, Search } from 'lucide-react';
-import { api } from '../services/api';
+import api from '../services/api';
 
 interface PipelineConfig {
   enable_query_preprocessing: boolean;

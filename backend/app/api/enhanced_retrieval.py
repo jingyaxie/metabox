@@ -19,7 +19,7 @@ from ..services.reranker import RerankStrategy
 from ..services.metadata_filter import FilterCondition, FilterOperator
 from ..services.vector_service import VectorService
 from ..core.database import get_db
-from ..schemas.auth import get_current_user
+from ..core.deps import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,9 @@ class QueryRequest(BaseModel):
     kb_ids: List[str]
     user_context: Optional[Dict[str, Any]] = None
     config: Optional[PipelineConfig] = None
+    
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class QueryResponse(BaseModel):
@@ -61,6 +64,9 @@ class PipelineConfigRequest(BaseModel):
     max_retrieval_results: int = 50
     final_top_k: int = 10
     enable_parallel_processing: bool = True
+    
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class FilterConditionRequest(BaseModel):

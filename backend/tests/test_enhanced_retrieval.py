@@ -5,7 +5,8 @@ import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock
 
-from app.services.query_processor import QueryProcessor, QueryType
+from app.services.query_processor import QueryProcessor
+from app.services.multi_query_expander import QueryType
 from app.services.multi_query_expander import MultiQueryExpander, ExpansionStrategy
 from app.services.hybrid_retriever import HybridRetriever, FusionStrategy
 from app.services.reranker import Reranker, RerankStrategy

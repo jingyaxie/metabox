@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 import asyncio
 
-from app.models.knowledge_base import KnowledgeBase, TextChunk, ImageVector
+from app.models.knowledge_base import KnowledgeBase, KnowledgeBaseChunk as TextChunk, KnowledgeBaseImage as ImageVector
 from app.core.config import settings
 from app.services.vector_service import VectorService
 
