@@ -1,8 +1,9 @@
 from typing import Optional
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 import time
+import jwt
 
 from app.core.database import get_db
 from app.services.api_key_service import ApiKeyService
@@ -13,6 +14,8 @@ from app.core.exceptions import (
     QuotaExceededError,
     RateLimitExceededError
 )
+from app.core.config import settings
+from app.services.admin_service import AdminService
 
 # HTTP Bearer认证
 security = HTTPBearer(auto_error=False)
@@ -167,4 +170,55 @@ def require_search_permission():
 
 def require_read_permission():
     """要求读取权限的依赖函数"""
-    return require_api_key("read") 
+    return require_api_key("read")
+
+
+async def get_current_super_admin(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+) -> dict:
+    """获取当前超级管理员"""
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        
+        admin_id = payload.get("sub")
+        role = payload.get("role")
+        
+        if not admin_id or role != "super_admin":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="无效的认证令牌"
+            )
+        
+        # 验证管理员是否存在且活跃
+        admin_service = AdminService(db)
+        admin = admin_service.get_super_admin_by_id(admin_id)
+        
+        if not admin or not admin.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="管理员不存在或已停用"
+            )
+        
+        return {
+            "id": admin.id,
+            "username": admin.username,
+            "email": admin.email,
+            "role": "super_admin"
+        }
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="认证令牌已过期"
+        )
+    except jwt.JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="无效的认证令牌"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="认证失败"
+        ) 
