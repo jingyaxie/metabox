@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Copy, Plus, Trash2, Edit, Eye, EyeOff } from 'lucide-react';
-import { toast } from 'sonner';
+import { Copy, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 interface ApiKey {
   id: string;
@@ -67,7 +65,7 @@ export default function ApiKeys() {
         setApiKeys(data.api_keys || []);
       }
     } catch (error) {
-      toast.error('获取API密钥列表失败');
+      alert('获取API密钥列表失败');
     } finally {
       setLoading(false);
     }
@@ -100,12 +98,12 @@ export default function ApiKeys() {
           }
         });
         fetchApiKeys();
-        toast.success('API密钥创建成功');
+        alert('API密钥创建成功');
       } else {
-        toast.error('创建API密钥失败');
+        alert('创建API密钥失败');
       }
     } catch (error) {
-      toast.error('创建API密钥失败');
+      alert('创建API密钥失败');
     }
   };
 
@@ -119,18 +117,18 @@ export default function ApiKeys() {
 
       if (response.ok) {
         fetchApiKeys();
-        toast.success('API密钥删除成功');
+        alert('API密钥删除成功');
       } else {
-        toast.error('删除API密钥失败');
+        alert('删除API密钥失败');
       }
     } catch (error) {
-      toast.error('删除API密钥失败');
+      alert('删除API密钥失败');
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('已复制到剪贴板');
+    alert('已复制到剪贴板');
   };
 
   const formatDate = (dateString: string) => {
@@ -168,9 +166,6 @@ export default function ApiKeys() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>创建新的API密钥</CardTitle>
-            <CardDescription>
-              创建一个新的API密钥用于外部系统调用
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
@@ -219,14 +214,14 @@ export default function ApiKeys() {
                 />
               </div>
               <div>
-                <Label htmlFor="quota_monthly">每月配额</Label>
+                <Label htmlFor="max_tokens">最大Token数</Label>
                 <Input
-                  id="quota_monthly"
+                  id="max_tokens"
                   type="number"
-                  value={newApiKey.permissions.quota_monthly}
+                  value={newApiKey.permissions.max_tokens}
                   onChange={(e) => setNewApiKey({
                     ...newApiKey, 
-                    permissions: {...newApiKey.permissions, quota_monthly: parseInt(e.target.value)}
+                    permissions: {...newApiKey.permissions, max_tokens: parseInt(e.target.value)}
                   })}
                 />
               </div>
@@ -240,34 +235,37 @@ export default function ApiKeys() {
       )}
 
       {createdKey && (
-        <Alert className="mb-6">
-          <AlertDescription>
-            <div className="flex items-center justify-between">
-              <span>API密钥创建成功！请保存以下密钥，创建后将无法再次查看完整密钥。</span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowKey(!showKey)}
-                >
-                  {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyToClipboard(createdKey)}
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
-              </div>
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="text-green-800">API密钥创建成功</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Input
+                value={showKey ? createdKey : '••••••••••••••••••••••••••••••••'}
+                readOnly
+                className="font-mono"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowKey(!showKey)}
+              >
+                {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(createdKey)}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
             </div>
-            {showKey && (
-              <div className="mt-2 p-2 bg-gray-100 rounded font-mono text-sm break-all">
-                {createdKey}
-              </div>
-            )}
-          </AlertDescription>
-        </Alert>
+            <p className="text-sm text-green-600 mt-2">
+              请保存好这个密钥，它只会显示一次
+            </p>
+          </CardContent>
+        </Card>
       )}
 
       <div className="grid gap-4">
@@ -276,45 +274,44 @@ export default function ApiKeys() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {apiKey.app_name}
-                    {getStatusBadge(apiKey.status)}
-                  </CardTitle>
-                  <CardDescription>
-                    应用ID: {apiKey.app_id} | 密钥前缀: {apiKey.key_prefix}
-                  </CardDescription>
+                  <CardTitle className="text-lg">{apiKey.app_name}</CardTitle>
+                  <p className="text-sm text-gray-500">ID: {apiKey.app_id}</p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => deleteApiKey(apiKey.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(apiKey.status)}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteApiKey(apiKey.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="font-medium">创建时间:</span>
-                  <div>{formatDate(apiKey.created_at)}</div>
+                  <p className="text-gray-500">密钥前缀</p>
+                  <p className="font-mono">{apiKey.key_prefix}</p>
                 </div>
                 <div>
-                  <span className="font-medium">总调用次数:</span>
-                  <div>{apiKey.total_calls.toLocaleString()}</div>
+                  <p className="text-gray-500">创建时间</p>
+                  <p>{formatDate(apiKey.created_at)}</p>
                 </div>
                 <div>
-                  <span className="font-medium">总Token消耗:</span>
-                  <div>{apiKey.total_tokens.toLocaleString()}</div>
+                  <p className="text-gray-500">总调用次数</p>
+                  <p>{apiKey.total_calls.toLocaleString()}</p>
                 </div>
                 <div>
-                  <span className="font-medium">最后使用:</span>
-                  <div>{apiKey.last_used_at ? formatDate(apiKey.last_used_at) : '从未使用'}</div>
+                  <p className="text-gray-500">总Token数</p>
+                  <p>{apiKey.total_tokens.toLocaleString()}</p>
                 </div>
               </div>
-              {apiKey.expires_at && (
+              {apiKey.last_used_at && (
                 <div className="mt-2 text-sm">
-                  <span className="font-medium">过期时间:</span> {formatDate(apiKey.expires_at)}
+                  <p className="text-gray-500">最后使用时间</p>
+                  <p>{formatDate(apiKey.last_used_at)}</p>
                 </div>
               )}
             </CardContent>
@@ -322,11 +319,11 @@ export default function ApiKeys() {
         ))}
       </div>
 
-      {apiKeys.length === 0 && (
+      {apiKeys.length === 0 && !loading && (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-gray-500 mb-4">暂无API密钥</p>
-            <Button onClick={() => setShowCreateForm(true)}>
+          <CardContent className="text-center py-8">
+            <p className="text-gray-500">暂无API密钥</p>
+            <Button onClick={() => setShowCreateForm(true)} className="mt-2">
               <Plus className="w-4 h-4 mr-2" />
               创建第一个API密钥
             </Button>

@@ -7,31 +7,30 @@ import type {
   KbInfoResponse,
   KbListResponse
 } from './types';
-import { apiRequest, streamRequest } from './api';
+import { MetaBoxAPI, streamRequest } from './api';
 
 export class MetaBoxClient {
-  private apiKey: string;
-  private baseUrl: string;
+  private api: MetaBoxAPI;
 
   constructor(options: MetaBoxClientOptions) {
-    this.apiKey = options.apiKey;
-    this.baseUrl = options.baseUrl || '/api/v1';
+    this.api = new MetaBoxAPI(options.baseUrl || '/api/v1', options.apiKey);
   }
 
   async query(data: QueryRequest): Promise<QueryResponse> {
-    return apiRequest<QueryResponse>(`${this.baseUrl}/chat/query`, data, this.apiKey);
+    return this.api.query(data);
   }
 
   async search(data: SearchRequest): Promise<SearchResponse> {
-    return apiRequest<SearchResponse>(`${this.baseUrl}/retrieval/search`, data, this.apiKey);
+    const kbId = data.kb_ids && data.kb_ids.length > 0 ? data.kb_ids[0] : '';
+    return this.api.search(data.query, kbId, data.top_k || 10);
   }
 
   async getKbList(): Promise<KbListResponse> {
-    return apiRequest<KbListResponse>(`${this.baseUrl}/kb/list`, {}, this.apiKey);
+    return this.api.getKnowledgeBases();
   }
 
   async getKbInfo(kb_id: string): Promise<KbInfoResponse> {
-    return apiRequest<KbInfoResponse>(`${this.baseUrl}/kb/${kb_id}/info`, {}, this.apiKey);
+    return this.api.getKnowledgeBase(kb_id);
   }
 
   streamQuery(
@@ -39,6 +38,8 @@ export class MetaBoxClient {
     onMessage: (msg: any) => void,
     onError?: (err: any) => void
   ) {
-    return streamRequest(`${this.baseUrl}/chat/query`, data, this.apiKey, onMessage, onError);
+    const baseUrl = (this.api as any).baseUrl;
+    const apiKey = (this.api as any).apiKey || '';
+    return streamRequest(`${baseUrl}/chat/query`, data, apiKey, onMessage, onError);
   }
 } 
