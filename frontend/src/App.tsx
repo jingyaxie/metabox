@@ -12,6 +12,8 @@ import Settings from './pages/Settings'
 import ApiKeys from './pages/ApiKeys'
 import Plugins from './pages/Plugins'
 import EnhancedRetrieval from './pages/EnhancedRetrieval'
+import AdminLogin from './pages/AdminLogin'
+import AdminDashboard from './pages/AdminDashboard'
 
 function App() {
   return (
@@ -22,6 +24,10 @@ function App() {
             {/* 公开路由 */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            
+            {/* 管理员路由 */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             
             {/* 受保护的路由 */}
             <Route path="/" element={
