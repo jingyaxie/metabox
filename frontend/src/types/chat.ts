@@ -11,15 +11,14 @@ export interface Session {
 
 export interface Message {
   id: string
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system'
   content: string
   created_at: string
   session_id: string
   metadata?: {
-    knowledge_base?: string
-    model?: string
-    tokens?: number
-    feedback?: 'like' | 'dislike' | null
+    feedback?: 'like' | 'dislike'
+    tokens_used?: number
+    model_used?: string
   }
 }
 
@@ -27,17 +26,25 @@ export interface KnowledgeBase {
   id: string
   name: string
   description: string
+  type: string
   created_at: string
-  updated_at: string
+  text_model_info?: any
+  image_model_info?: any
+  embedding_model_info?: any
+  image_embedding_model_info?: any
 }
 
 export interface Model {
   id: string
   name: string
+  model_name?: string
   provider: string
+  provider_type?: string
+  model_type?: string
   description: string
   max_tokens: number
   temperature: number
+  is_default?: boolean
 }
 
 export interface ChatSettings {

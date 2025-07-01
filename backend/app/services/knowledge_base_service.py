@@ -55,12 +55,27 @@ class KnowledgeBaseService:
             ImageVector.knowledge_base_id == kb_id
         ).order_by(ImageVector.created_at.desc()).all()
     
-    def create_knowledge_base(self, user_id: str, name: str, description: str = "") -> KnowledgeBase:
+    def create_knowledge_base(
+        self, 
+        user_id: str, 
+        name: str, 
+        description: str = "",
+        kb_type: str = "text",
+        text_model_id: Optional[str] = None,
+        image_model_id: Optional[str] = None,
+        embedding_model_id: Optional[str] = None,
+        image_embedding_model_id: Optional[str] = None
+    ) -> KnowledgeBase:
         """创建知识库"""
         knowledge_base = KnowledgeBase(
             name=name,
             description=description,
-            owner_id=user_id
+            type=kb_type,
+            owner_id=user_id,
+            text_model_id=text_model_id,
+            image_model_id=image_model_id,
+            embedding_model_id=embedding_model_id,
+            image_embedding_model_id=image_embedding_model_id
         )
         self.db.add(knowledge_base)
         self.db.commit()
