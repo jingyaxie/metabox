@@ -370,6 +370,29 @@ chmod +x scripts/dev_setup_no_docker.sh
 2. 检查 [开发文档](docs/development/)
 3. 提交 [Issue](../../issues)
 
+## 🚀 API快速上手
+
+1. 登录管理后台，创建API密钥
+2. 参考 [docs/api/external_api_design.md](docs/api/external_api_design.md) 查看接口说明与示例
+3. 前端/Node.js 推荐使用官方SDK：
+
+```typescript
+import { MetaBoxClient } from './sdk/metabox';
+const client = new MetaBoxClient({ apiKey: 'your_api_key', baseUrl: '/api/v1' });
+const res = await client.query({ message: '什么是人工智能？', kb_ids: ['kb_123'] });
+```
+
+4. 也可直接用curl/Python等调用：
+
+```bash
+curl -X POST https://yourdomain.com/api/v1/chat/query \
+  -H "Authorization: Bearer <your_api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"什么是人工智能？","kb_ids":["kb_123"]}'
+```
+
+5. 支持流式响应、检索、知识库管理等高级功能，详见文档。
+
 ---
 
 **MetaBox** - 让知识管理更智能 🚀 

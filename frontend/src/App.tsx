@@ -9,6 +9,7 @@ import KnowledgeBases from './pages/KnowledgeBase'
 import KnowledgeBaseDetail from './pages/KnowledgeBaseDetail'
 import Chat from './pages/Chat'
 import Settings from './pages/Settings'
+import ApiKeys from './pages/ApiKeys'
 import Plugins from './pages/Plugins'
 import EnhancedRetrieval from './pages/EnhancedRetrieval'
 
@@ -34,6 +35,7 @@ function App() {
               <Route path="kb/:id" element={<KnowledgeBaseDetail />} />
               <Route path="chat" element={<Chat />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="api-keys" element={<ApiKeys />} />
               <Route path="plugins" element={<Plugins />} />
               <Route path="enhanced-retrieval" element={<EnhancedRetrieval />} />
             </Route>
