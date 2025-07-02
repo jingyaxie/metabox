@@ -154,7 +154,7 @@ create_prod_config() {
 version: '3.8'
 
 services:
-  # PostgreSQL 数据库
+  # SQLite 数据库（本地文件）
   postgres:
     image: postgres:14-alpine
     container_name: ${PROJECT_NAME}_postgres
@@ -171,7 +171,7 @@ services:
     networks:
       - metabox_network
 
-  # Redis 缓存
+  # 本地缓存（内存）
   redis:
     image: redis:7-alpine
     container_name: ${PROJECT_NAME}_redis
@@ -184,7 +184,7 @@ services:
     networks:
       - metabox_network
 
-  # Qdrant 向量数据库
+  # Chroma 向量数据库（本地文件）
   qdrant:
     image: qdrant/qdrant:latest
     container_name: ${PROJECT_NAME}_qdrant

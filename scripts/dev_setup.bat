@@ -140,8 +140,8 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM 启动 PostgreSQL 和 Redis
-docker-compose up -d postgres redis qdrant
+REM 启动本地服务（SQLite + Chroma）
+docker-compose up -d
 
 REM 等待数据库启动
 call :log_info "等待数据库启动..."

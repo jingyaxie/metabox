@@ -3,10 +3,9 @@ FROM python:3.11-slim
 # 设置工作目录
 WORKDIR /app
 
-# 安装系统依赖
+# 安装系统依赖（减少不必要的依赖）
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖文件
@@ -19,7 +18,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 创建必要的目录
-RUN mkdir -p uploads logs
+RUN mkdir -p uploads logs data chroma_db data chroma_db
+
+# 设置权限
+RUN chmod +x /app/scripts/*.sh
 
 # 暴露端口
 EXPOSE 8000

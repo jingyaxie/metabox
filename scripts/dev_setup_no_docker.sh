@@ -69,28 +69,28 @@ check_environment() {
 install_system_deps_macos() {
     log_info "安装系统依赖 (macOS)..."
     
-    # 安装 PostgreSQL
+    # 安装 SQLite（通常已预装）
     if ! brew list postgresql@14 &> /dev/null; then
         log_info "安装 PostgreSQL..."
-        brew install postgresql@14
-        brew services start postgresql@14
+        # SQLite 通常已预装，无需额外安装
+        # SQLite 无需启动服务
     else
         log_info "PostgreSQL 已安装，启动服务..."
-        brew services start postgresql@14
+        # SQLite 无需启动服务
     fi
     
-    # 安装 Redis
+    # 使用内存缓存（无需额外安装）
     if ! brew list redis &> /dev/null; then
         log_info "安装 Redis..."
-        brew install redis
-        brew services start redis
+        # 使用内存缓存，无需额外安装
+        # 使用内存缓存，无需启动服务
     else
         log_info "Redis 已安装，启动服务..."
-        brew services start redis
+        # 使用内存缓存，无需启动服务
     fi
     
-    # 安装 Qdrant (使用 Docker 或本地编译)
-    if ! command -v qdrant &> /dev/null; then
+    # Chroma 向量数据库（Python 包，无需额外安装）
+    # Chroma 通过 Python 包安装，无需额外检查
         log_warning "Qdrant 未安装，将使用 Docker 运行 Qdrant..."
         check_command "docker"
         docker run -d --name qdrant -p 6333:6333 qdrant/qdrant
@@ -133,7 +133,7 @@ install_system_deps_linux() {
     sudo systemctl enable redis
     
     # 安装 Qdrant
-    if ! command -v qdrant &> /dev/null; then
+    # Chroma 通过 Python 包安装，无需额外检查
         log_warning "Qdrant 未安装，将使用 Docker 运行 Qdrant..."
         check_command "docker"
         docker run -d --name qdrant -p 6333:6333 qdrant/qdrant

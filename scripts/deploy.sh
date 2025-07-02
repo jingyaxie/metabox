@@ -80,19 +80,19 @@ build_images() {
 start_services() {
     log_info "启动服务..."
     
-    # 启动数据库服务
-    docker-compose up -d postgres redis qdrant
+    # 启动所有服务
+    docker-compose up -d
     
-    # 等待数据库启动
-    log_info "等待数据库启动..."
-    sleep 15
+    # 等待服务启动
+    log_info "等待服务启动..."
+    sleep 10
     
-    # 运行数据库迁移
+    # 运行数据库迁移（SQLite）（SQLite）
     log_info "运行数据库迁移..."
-    docker-compose run --rm backend python -m alembic upgrade head
+    docker-compose exec backend python -m alembic upgrade head
     
-    # 启动应用服务
-    docker-compose up -d backend frontend nginx
+    # 启动应用服务（已包含在上面的docker-compose up -d中）
+    
     
     log_success "服务启动完成"
 }
@@ -150,8 +150,8 @@ backup_data() {
     # 创建备份目录
     mkdir -p backups/$(date +%Y%m%d_%H%M%S)
     
-    # 备份数据库
-    docker-compose exec postgres pg_dump -U metabox metabox > backups/$(date +%Y%m%d_%H%M%S)/database.sql
+    # 备份SQLite数据库
+    cp data/metabox.db backups/$(date +%Y%m%d_%H%M%S)/metabox.db
     
     # 备份上传文件
     tar -czf backups/$(date +%Y%m%d_%H%M%S)/uploads.tar.gz uploads/
@@ -170,8 +170,8 @@ restore_data() {
     
     log_info "恢复数据..."
     
-    # 恢复数据库
-    docker-compose exec -T postgres psql -U metabox metabox < $backup_dir/database.sql
+    # 恢复SQLite数据库
+    cp $backup_dir/metabox.db data/metabox.db
     
     # 恢复上传文件
     tar -xzf $backup_dir/uploads.tar.gz -C ./

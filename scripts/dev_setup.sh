@@ -145,8 +145,8 @@ start_database() {
         exit 1
     fi
     
-    # 启动 PostgreSQL 和 Redis
-    docker-compose up -d postgres redis qdrant
+    # 启动本地服务（SQLite + Chroma）
+    docker-compose up -d
     
     # 等待数据库启动
     log_info "等待数据库启动..."
