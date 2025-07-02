@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { authApi } from '../services/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -58,25 +59,30 @@ const Login: React.FC = () => {
     setError('')
 
     try {
-      // 临时使用模拟登录，避免后端依赖
-      if (formData.username && formData.password) {
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // 保存认证信息
-        login('mock-token', {
-          id: '1',
-          username: formData.username,
-          email: `${formData.username}@example.com`,
-          role: 'user'
-        })
-        
-        navigate('/dashboard')
-      } else {
-        setError('请输入用户名和密码')
-      }
+      // 调用真实的登录API
+      const response = await authApi.login({
+        username: formData.username,
+        password: formData.password
+      })
+      
+      // 保存认证信息
+      login(response.access_token, {
+        id: response.user_id,
+        username: response.username,
+        email: `${response.username}@example.com`, // 后端可能没有返回email
+        role: response.role
+      })
+      
+      navigate('/dashboard')
     } catch (err: any) {
-      setError('登录失败，请检查用户名和密码')
+      console.error('登录失败:', err)
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail)
+      } else if (err.message) {
+        setError(err.message)
+      } else {
+        setError('登录失败，请检查用户名和密码')
+      }
     } finally {
       setLoading(false)
     }
