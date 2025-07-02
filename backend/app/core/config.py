@@ -52,8 +52,10 @@ class Settings(BaseSettings):
     
     # 图片内容理解配置
     ENABLE_IMAGE_UNDERSTANDING: bool = True
+    DEFAULT_IMAGE_PROVIDER: str = "openai"  # 默认图片理解服务商: openai, qwen
     IMAGE_OCR_MODEL: str = "gpt-4-vision-preview"  # OCR模型
     IMAGE_VISION_MODEL: str = "gpt-4-vision-preview"  # 图片理解模型
+    QWEN_IMAGE_MODEL: str = "qwen-vl-plus"  # 通义千问图片模型
     IMAGE_MAX_SIZE: int = 1024  # 图片最大尺寸
     IMAGE_QUALITY: int = 85  # 图片质量
     

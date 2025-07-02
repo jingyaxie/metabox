@@ -109,7 +109,7 @@ class VectorService:
             vector = vector[:target_dim]
         return vector[:settings.TEXT_EMBEDDING_DIMENSION]
     
-    async def analyze_image_content(self, image_path: str, user_description: Optional[str] = None, provider: Optional[str] = None) -> Dict[str, str]:
+    async def analyze_image_content(self, image_path: str) -> Dict[str, str]:
         """分析图片内容（OCR + 描述）"""
         try:
             from PIL import Image
@@ -131,261 +131,127 @@ class VectorService:
             image.save(img_buffer, format='JPEG', quality=settings.IMAGE_QUALITY)
             img_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
             
-            # 确定使用的服务商
-            if provider is None:
-                provider = settings.DEFAULT_IMAGE_PROVIDER
-            
             # 调用大模型进行OCR
-            ocr_text = await self._call_model_ocr(img_base64, provider)
+            ocr_text = await self._call_model_ocr(img_base64)
             
             # 调用大模型进行图片描述
-            ai_description = await self._call_model_vision(img_base64, provider)
-            
-            # 组合描述：用户描述 + AI描述
-            final_description = ""
-            if user_description:
-                final_description += f"用户描述：{user_description}\n"
-            if ai_description:
-                final_description += f"AI描述：{ai_description}"
-            
-            # 组合文本用于向量化
-            combined_text = f"{ocr_text or ''} {final_description}".strip()
+            description = await self._call_model_vision(img_base64)
             
             return {
                 "ocr_text": ocr_text or "",
-                "ai_description": ai_description or "",
-                "user_description": user_description or "",
-                "final_description": final_description.strip(),
-                "combined_text": combined_text
+                "description": description or "",
+                "combined_text": f"{ocr_text or ''} {description or ''}".strip()
             }
             
         except Exception as e:
             logger.error(f"Image content analysis error: {e}")
             return {
                 "ocr_text": "",
-                "ai_description": "",
-                "user_description": user_description or "",
-                "final_description": user_description or "",
-                "combined_text": user_description or ""
+                "description": "",
+                "combined_text": ""
             }
     
-    async def _call_model_ocr(self, image_base64: str, provider: str = "openai") -> Optional[str]:
+    async def _call_model_ocr(self, image_base64: str) -> Optional[str]:
         """调用大模型进行OCR"""
-        # 检查API密钥
-        if provider == "openai":
-            if not settings.OPENAI_API_KEY:
-                return None
-        elif provider == "qwen":
-            if not settings.QWEN_API_KEY:
-                return None
-        else:
+        if not settings.OPENAI_API_KEY:
             return None
         
         try:
-            if provider == "openai":
-                return await self._call_openai_ocr(image_base64)
-            elif provider == "qwen":
-                return await self._call_qwen_ocr(image_base64)
-            else:
-                return None
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
+                    "Content-Type": "application/json"
+                }
+                
+                data = {
+                    "model": settings.IMAGE_OCR_MODEL,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "请识别这张图片中的所有文字内容，包括标题、正文、标签等所有可见文字。保持原有的格式和顺序。如果图片中没有文字，请返回'无文字内容'。只返回识别出的文字，不要添加其他描述。"
+                                },
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_base64}"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "max_tokens": 1000,
+                    "temperature": 0.1
+                }
+                
+                async with session.post(
+                    f"{settings.OPENAI_BASE_URL}/chat/completions",
+                    headers=headers,
+                    json=data
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        return result["choices"][0]["message"]["content"].strip()
+                    else:
+                        logger.warning(f"OCR API call failed: {response.status}")
+                        return None
+                        
         except Exception as e:
             logger.error(f"OCR API error: {e}")
             return None
     
-    async def _call_openai_ocr(self, image_base64: str) -> Optional[str]:
-        """调用OpenAI进行OCR"""
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            
-            data = {
-                "model": settings.IMAGE_OCR_MODEL,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "请识别这张图片中的所有文字内容，包括标题、正文、标签等所有可见文字。保持原有的格式和顺序。如果图片中没有文字，请返回'无文字内容'。只返回识别出的文字，不要添加其他描述。"
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_base64}"
-                                }
-                            }
-                        ]
-                    }
-                ],
-                "max_tokens": 1000,
-                "temperature": 0.1
-            }
-            
-            async with session.post(
-                f"{settings.OPENAI_BASE_URL}/chat/completions",
-                headers=headers,
-                json=data
-            ) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    return result["choices"][0]["message"]["content"].strip()
-                else:
-                    logger.warning(f"OpenAI OCR API call failed: {response.status}")
-                    return None
-    
-    async def _call_qwen_ocr(self, image_base64: str) -> Optional[str]:
-        """调用通义千问进行OCR"""
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                "Authorization": f"Bearer {settings.QWEN_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            
-            data = {
-                "model": settings.QWEN_IMAGE_MODEL,
-                "input": {
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "text": "请识别这张图片中的所有文字内容，包括标题、正文、标签等所有可见文字。保持原有的格式和顺序。如果图片中没有文字，请返回'无文字内容'。只返回识别出的文字，不要添加其他描述。"
-                                },
-                                {
-                                    "image": image_base64
-                                }
-                            ]
-                        }
-                    ]
-                },
-                "parameters": {
-                    "max_tokens": 1000,
-                    "temperature": 0.1
-                }
-            }
-            
-            async with session.post(
-                f"{settings.QWEN_BASE_URL}/services/aigc/text-generation/generation",
-                headers=headers,
-                json=data
-            ) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    return result["output"]["text"].strip()
-                else:
-                    logger.warning(f"Qwen OCR API call failed: {response.status}")
-                    return None
-    
-    async def _call_model_vision(self, image_base64: str, provider: str = "openai") -> Optional[str]:
+    async def _call_model_vision(self, image_base64: str) -> Optional[str]:
         """调用大模型进行图片描述"""
-        # 检查API密钥
-        if provider == "openai":
-            if not settings.OPENAI_API_KEY:
-                return None
-        elif provider == "qwen":
-            if not settings.QWEN_API_KEY:
-                return None
-        else:
+        if not settings.OPENAI_API_KEY:
             return None
         
         try:
-            if provider == "openai":
-                return await self._call_openai_vision(image_base64)
-            elif provider == "qwen":
-                return await self._call_qwen_vision(image_base64)
-            else:
-                return None
-        except Exception as e:
-            logger.error(f"Vision API error: {e}")
-            return None
-    
-    async def _call_openai_vision(self, image_base64: str) -> Optional[str]:
-        """调用OpenAI进行图片描述"""
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            
-            data = {
-                "model": settings.IMAGE_VISION_MODEL,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": "请详细描述这张图片的内容，包括图片中的主要物体、人物、场景、颜色、风格、构图等视觉特征，以及图片的整体氛围和情感。如果是图表或文档，请描述其结构和内容。用中文描述，语言要准确、详细。"
-                            },
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{image_base64}"
-                                }
-                            }
-                        ]
-                    }
-                ],
-                "max_tokens": 500,
-                "temperature": 0.3
-            }
-            
-            async with session.post(
-                f"{settings.OPENAI_BASE_URL}/chat/completions",
-                headers=headers,
-                json=data
-            ) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    return result["choices"][0]["message"]["content"].strip()
-                else:
-                    logger.warning(f"OpenAI Vision API call failed: {response.status}")
-                    return None
-    
-    async def _call_qwen_vision(self, image_base64: str) -> Optional[str]:
-        """调用通义千问进行图片描述"""
-        async with aiohttp.ClientSession() as session:
-            headers = {
-                "Authorization": f"Bearer {settings.QWEN_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            
-            data = {
-                "model": settings.QWEN_IMAGE_MODEL,
-                "input": {
+            async with aiohttp.ClientSession() as session:
+                headers = {
+                    "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
+                    "Content-Type": "application/json"
+                }
+                
+                data = {
+                    "model": settings.IMAGE_VISION_MODEL,
                     "messages": [
                         {
                             "role": "user",
                             "content": [
                                 {
+                                    "type": "text",
                                     "text": "请详细描述这张图片的内容，包括图片中的主要物体、人物、场景、颜色、风格、构图等视觉特征，以及图片的整体氛围和情感。如果是图表或文档，请描述其结构和内容。用中文描述，语言要准确、详细。"
                                 },
                                 {
-                                    "image": image_base64
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_base64}"
+                                    }
                                 }
                             ]
                         }
-                    ]
-                },
-                "parameters": {
+                    ],
                     "max_tokens": 500,
                     "temperature": 0.3
                 }
-            }
-            
-            async with session.post(
-                f"{settings.QWEN_BASE_URL}/services/aigc/text-generation/generation",
-                headers=headers,
-                json=data
-            ) as response:
-                if response.status == 200:
-                    result = await response.json()
-                    return result["output"]["text"].strip()
-                else:
-                    logger.warning(f"Qwen Vision API call failed: {response.status}")
-                    return None
+                
+                async with session.post(
+                    f"{settings.OPENAI_BASE_URL}/chat/completions",
+                    headers=headers,
+                    json=data
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        return result["choices"][0]["message"]["content"].strip()
+                    else:
+                        logger.warning(f"Vision API call failed: {response.status}")
+                        return None
+                        
+        except Exception as e:
+            logger.error(f"Vision API error: {e}")
+            return None
     
     async def vectorize_text_chunk(self, chunk: TextChunk) -> bool:
         """向量化文本分块"""
@@ -412,7 +278,7 @@ class VectorService:
             logger.error(f"Vectorize text chunk error: {e}")
             return False
     
-    async def vectorize_image(self, image: ImageVector, user_description: Optional[str] = None, provider: Optional[str] = None) -> bool:
+    async def vectorize_image(self, image: ImageVector) -> bool:
         """向量化图片（分析内容并存储）"""
         try:
             # 分析图片内容
@@ -421,7 +287,7 @@ class VectorService:
                 logger.error(f"Image file not found: {image_path}")
                 return False
             
-            content_analysis = await self.analyze_image_content(image_path, user_description, provider)
+            content_analysis = await self.analyze_image_content(image_path)
             
             # 获取组合文本的向量
             combined_text = content_analysis["combined_text"]
@@ -444,18 +310,14 @@ class VectorService:
                     "filename": image.filename,
                     "image_url": image_url,
                     "ocr_text": content_analysis["ocr_text"],
-                    "ai_description": content_analysis["ai_description"],
-                    "user_description": content_analysis["user_description"],
-                    "final_description": content_analysis["final_description"],
+                    "description": content_analysis["description"],
                     "knowledge_base_id": str(image.knowledge_base_id),
                     "created_at": image.created_at.isoformat()
                 }]
             )
             
             # 更新数据库中的描述
-            image.description = content_analysis["final_description"]
-            image.user_description = content_analysis["user_description"]
-            image.user_description = content_analysis["user_description"]
+            image.description = content_analysis["description"]
             self.db.commit()
             
             return True
