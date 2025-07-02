@@ -2,33 +2,27 @@
 知识库管理 API
 """
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Body
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from app.core.database import get_db
-from app.services.auth_service import AuthService
+from app.api.dependencies import get_current_user
 from app.services.knowledge_base_service import KnowledgeBaseService
 from app.services.admin_service import AdminService
 from app.schemas.knowledge_base import SmartConfigRequest, SmartConfigResponse
 from app.services.text_splitter import SmartConfigManager
 
 router = APIRouter()
-security = HTTPBearer()
 
 @router.get("/models")
 async def get_available_models(
     model_type: Optional[str] = None,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """获取可用的模型列表（用于知识库创建）"""
     try:
-        auth_service = AuthService(db)
         admin_service = AdminService(db)
-        
-        # 验证当前用户
-        current_user = auth_service.get_current_user(credentials.credentials)
         
         # 获取所有活跃的模型配置
         model_configs = admin_service.get_model_configs(
@@ -106,15 +100,11 @@ async def get_available_models(
 
 @router.get("/")
 async def get_knowledge_bases(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """获取知识库列表"""
-    auth_service = AuthService(db)
     kb_service = KnowledgeBaseService(db)
-    
-    # 验证当前用户
-    current_user = auth_service.get_current_user(credentials.credentials)
     
     # 获取用户的知识库
     knowledge_bases = kb_service.get_user_knowledge_bases(current_user.id)
@@ -129,15 +119,11 @@ async def create_knowledge_base(
     image_model_id: Optional[str] = None,
     embedding_model_id: Optional[str] = None,
     image_embedding_model_id: Optional[str] = None,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """创建知识库"""
-    auth_service = AuthService(db)
     kb_service = KnowledgeBaseService(db)
-    
-    # 验证当前用户
-    current_user = auth_service.get_current_user(credentials.credentials)
     
     # 创建知识库
     knowledge_base = kb_service.create_knowledge_base(
@@ -156,16 +142,12 @@ async def create_knowledge_base(
 @router.get("/{kb_id}")
 async def get_knowledge_base(
     kb_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """获取知识库详情"""
-    auth_service = AuthService(db)
     kb_service = KnowledgeBaseService(db)
     admin_service = AdminService(db)
-    
-    # 验证当前用户
-    current_user = auth_service.get_current_user(credentials.credentials)
     
     # 获取知识库
     knowledge_base = kb_service.get_knowledge_base_by_id(kb_id, current_user.id)
@@ -238,15 +220,11 @@ async def update_knowledge_base(
     image_model_id: Optional[str] = None,
     embedding_model_id: Optional[str] = None,
     image_embedding_model_id: Optional[str] = None,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """更新知识库"""
-    auth_service = AuthService(db)
     kb_service = KnowledgeBaseService(db)
-    
-    # 验证当前用户
-    current_user = auth_service.get_current_user(credentials.credentials)
     
     # 更新知识库
     knowledge_base = kb_service.update_knowledge_base(
@@ -273,15 +251,11 @@ async def update_knowledge_base(
 async def upload_document(
     kb_id: str,
     file: UploadFile = File(...),
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """上传文档到知识库"""
-    auth_service = AuthService(db)
     kb_service = KnowledgeBaseService(db)
-    
-    # 验证当前用户
-    current_user = auth_service.get_current_user(credentials.credentials)
     
     # 上传文档
     result = await kb_service.upload_document(kb_id, file, current_user.id)
@@ -290,15 +264,11 @@ async def upload_document(
 @router.delete("/{kb_id}")
 async def delete_knowledge_base(
     kb_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """删除知识库"""
-    auth_service = AuthService(db)
     kb_service = KnowledgeBaseService(db)
-    
-    # 验证当前用户
-    current_user = auth_service.get_current_user(credentials.credentials)
     
     # 删除知识库
     success = kb_service.delete_knowledge_base(kb_id, current_user.id)
@@ -313,17 +283,19 @@ async def delete_knowledge_base(
 @router.post("/smart-config")
 async def get_smart_config(
     request: SmartConfigRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """获取智能配置建议"""
-    auth_service = AuthService(db)
-    
-    # 验证当前用户
-    current_user = auth_service.get_current_user(credentials.credentials)
-    
-    # 获取智能配置
     config_manager = SmartConfigManager()
-    config = config_manager.analyze_text(request.text, request.user_preferences)
     
-    return config 
+    # 获取配置建议
+    config = config_manager.get_smart_config(
+        file_type=request.file_type,
+        file_size=request.file_size,
+        content_length=request.content_length,
+        chunk_size=request.chunk_size,
+        chunk_overlap=request.chunk_overlap
+    )
+    
+    return SmartConfigResponse(**config) 

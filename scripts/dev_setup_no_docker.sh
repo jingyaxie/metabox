@@ -315,10 +315,10 @@ check_services() {
         log_warning "后端端口 8000 未监听"
     fi
     
-    if netstat -tuln 2>/dev/null | grep -q ":3000 "; then
-        log_success "前端端口 3000 已监听"
+    if netstat -tuln 2>/dev/null | grep -q ":3004 "; then
+        log_success "前端端口 3004 已监听"
     else
-        log_warning "前端端口 3000 未监听"
+        log_warning "前端端口 3004 未监听"
     fi
 }
 
@@ -394,7 +394,7 @@ show_help() {
     echo "  $0 logs backend"
     echo ""
     echo "访问地址:"
-    echo "  前端: http://localhost:3000"
+    echo "  前端: http://localhost:3004"
     echo "  后端: http://localhost:8000"
     echo "  API文档: http://localhost:8000/docs"
 }
@@ -418,7 +418,7 @@ main() {
             check_services
             log_success "环境设置完成！"
             log_info "访问地址:"
-            log_info "  前端: http://localhost:3000"
+            log_info "  前端: http://localhost:3004"
             log_info "  后端: http://localhost:8000"
             log_info "  API文档: http://localhost:8000/docs"
             ;;

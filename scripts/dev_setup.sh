@@ -227,7 +227,7 @@ check_services() {
     fi
     
     # 检查前端服务
-    if curl -s http://localhost:3000 > /dev/null; then
+    if curl -s http://localhost:3004 > /dev/null; then
         log_success "前端服务运行正常"
     else
         log_warning "前端服务可能未正常启动"
@@ -339,7 +339,7 @@ main() {
             check_services
             log_success "环境设置完成！"
             log_info "访问地址:"
-            log_info "  前端: http://localhost:3000"
+            log_info "  前端: http://localhost:3004"
             log_info "  后端: http://localhost:8000"
             log_info "  API文档: http://localhost:8000/docs"
             ;;

@@ -124,7 +124,7 @@ python scripts/create_super_admin.py
 ```
 
 #### 5. 访问系统
-- 前端界面：http://localhost:3000
+- 前端界面：http://localhost:3004
 - 后端API：http://localhost:8000
 - API文档：http://localhost:8000/docs
 

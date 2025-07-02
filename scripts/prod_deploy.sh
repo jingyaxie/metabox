@@ -132,7 +132,7 @@ check_environment() {
     fi
     
     # 检查端口是否被占用
-    local ports=(80 443 8000 3000 5432 6379 6333)
+    local ports=(80 443 8000 3004 5432 6379 6333)
     for port in "${ports[@]}"; do
         if netstat -tuln | grep -q ":$port "; then
             log_warning "端口 $port 已被占用"
@@ -311,7 +311,7 @@ server {
     
     # 前端静态文件
     location / {
-        proxy_pass http://frontend:3000;
+        proxy_pass http://frontend:3004;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;

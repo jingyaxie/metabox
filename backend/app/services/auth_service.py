@@ -99,7 +99,7 @@ class AuthService:
                 
         except jwt.ExpiredSignatureError:
             raise ValueError("令牌已过期")
-        except jwt.JWTError:
+        except jwt.exceptions.DecodeError:
             raise ValueError("无效的令牌")
         
         user = self.get_user_by_id(user_id)
