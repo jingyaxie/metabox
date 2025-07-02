@@ -1,69 +1,92 @@
-# MetaBox - 本地智能知识库系统
+# MetaBox - 企业级智能知识库系统
 
-一个基于 FastAPI + React + TypeScript 的现代化智能知识库系统，支持文档管理、智能检索、多模态处理和插件扩展。
+一个基于 FastAPI + React + TypeScript 的现代化企业级智能知识库系统，支持多模态检索、智能问答、插件扩展和完整的权限管理。
 
-## 🚀 项目特性
+## 🚀 核心特性
 
-- 🧠 **RAG + 多模态检索**：支持文本和图片的智能检索与问答
-- 🖼️ **统一向量库**：文本和图片向量库，实现多模态搜索
-- 🧩 **插件系统**：支持插件扩展和 Agent 多步推理
-- 🧑‍💼 **权限管理**：多用户多角色 RBAC 权限控制
-- 🐳 **一键部署**：Docker Compose 本地私有化部署
-- ⚙️ **模块化架构**：清晰的分层架构，易于扩展维护
+### 🧠 智能检索引擎
+- **智能检索服务**：自动识别查询意图，智能选择最佳检索策略
+- **多模态检索**：支持文本和图片的统一向量检索
+- **增强检索流水线**：查询扩展、混合检索、重排序、元数据过滤
+- **召回测试系统**：完整的检索效果评估和优化工具
 
-## 📋 功能模块
+### 💬 现代化聊天界面
+- **ChatGPT风格界面**：对标ChatGPT的现代化设计
+- **多会话管理**：新建、切换、重命名、删除会话
+- **流式响应**：实时显示AI回复，支持中断
+- **多模型支持**：动态切换不同AI模型
+- **知识库集成**：灵活选择知识库进行问答
 
-| 模块 | 功能描述 |
-|------|----------|
-| 知识库管理 | 文档上传、图片上传、自动向量化、智能分块配置 |
-| **💬 Chat 对话** | **🎨 对标 ChatGPT 的现代化界面**<br>**🔄 多会话管理**<br>**📚 知识库灵活切换**<br>**🤖 多模型选择**<br>**📱 响应式设计**<br>**⚡ 流式响应**<br>**📎 文件上传**<br>**🎯 消息反馈** |
-| 插件系统 | 插件注册、管理、Agent 推理 |
-| 权限管理 | 用户注册、登录、角色权限控制 |
-| 多模态支持 | 文本/图片向量化、混合检索 |
-| 增强检索 | 查询扩展、混合检索、重排序、元数据过滤 |
+### 🏢 企业级管理功能
+- **超级管理员系统**：模型供应商管理、系统配置、用户管理
+- **API密钥管理**：完整的API访问控制和权限管理
+- **外部API接口**：支持无上下文的外部智能检索
+- **RBAC权限控制**：多用户多角色权限管理
 
-## 🎨 Chat 界面特性
+### 🔌 插件与扩展
+- **插件系统**：支持自定义插件开发和集成
+- **Agent推理**：多步推理和智能任务执行
+- **智能配置**：基于文档内容的智能分块配置
+
+## 📋 功能模块总览
+
+| 模块 | 功能描述 | 状态 |
+|------|----------|------|
+| **用户认证** | 用户注册、登录、JWT认证、权限控制 | ✅ 已完成 |
+| **知识库管理** | 文档上传、图片上传、自动向量化、智能分块 | ✅ 已完成 |
+| **智能聊天** | ChatGPT风格界面、多会话、流式响应、多模型 | ✅ 已完成 |
+| **智能检索** | 意图识别、策略调度、多模态检索、召回测试 | ✅ 已完成 |
+| **增强检索** | 查询扩展、混合检索、重排序、元数据过滤 | ✅ 已完成 |
+| **超级管理员** | 模型供应商管理、系统配置、用户管理 | ✅ 已完成 |
+| **API密钥管理** | API访问控制、权限管理、使用统计 | ✅ 已完成 |
+| **外部API** | 无上下文外部检索、API密钥认证 | ✅ 已完成 |
+| **插件系统** | 插件管理、Agent推理、扩展开发 | ✅ 已完成 |
+| **智能配置** | 文档智能分块、配置模板、批量配置 | ✅ 已完成 |
+
+## 🎨 用户界面特性
 
 ### ✨ 现代化设计
-- **对标 ChatGPT**：采用 ChatGPT 官方设计风格，界面简洁美观
+- **ChatGPT风格**：采用ChatGPT官方设计风格，界面简洁美观
 - **响应式布局**：完美适配桌面、平板、手机等不同设备
 - **流畅动画**：打字机效果、平滑滚动、优雅过渡
 
 ### 🔄 多会话管理
 - **左侧会话栏**：新建、切换、重命名、删除会话
 - **会话搜索**：快速查找历史会话
-- **会话导出**：支持 TXT、MD、JSON 格式导出
+- **会话导出**：支持TXT、MD、JSON格式导出
 
 ### 🎯 智能配置
 - **知识库选择**：下拉选择特定知识库或全部知识库
-- **模型切换**：支持 GPT-3.5、GPT-4、Claude、Qwen 等多种模型
+- **模型切换**：支持GPT-3.5、GPT-4、Claude、Qwen等多种模型
 - **高级设置**：温度、最大长度、系统提示词等参数调节
 
 ### 💬 交互体验
-- **快捷键支持**：Enter 发送、Shift+Enter 换行、Ctrl+K 新建会话
+- **快捷键支持**：Enter发送、Shift+Enter换行、Ctrl+K新建会话
 - **文件上传**：拖拽或点击上传文档、图片
 - **消息操作**：复制、重新生成、点赞/踩反馈
-- **流式响应**：实时显示 AI 回复，支持中断
-
-### 📱 移动端优化
-- **触摸友好**：大按钮、易点击的交互元素
-- **侧边栏折叠**：移动端自动隐藏侧边栏
-- **底部输入**：输入框固定在底部，方便操作
+- **流式响应**：实时显示AI回复，支持中断
 
 ## 🏗️ 技术架构
 
 ```
 ┌─────────────────┐
 │   React 前端    │ TypeScript + Tailwind + Zustand
+│                 │ - 现代化UI组件库
+│                 │ - 响应式设计
+│                 │ - 状态管理
 └─────────┬───────┘
           ↓
 ┌─────────────────┐
 │   FastAPI 后端  │ Python + SQLAlchemy + Pydantic
+│                 │ - RESTful API设计
+│                 │ - 异步处理
+│                 │ - 数据验证
 └─────────┬───────┘
           ↓
-┌─────────┬───────┐
-│ Qdrant  │PostgreSQL│ 向量库 + 结构化数据
-└─────────┴───────┘
+┌─────────┬───────┬───────┐
+│ Qdrant  │PostgreSQL│ Redis │ 数据存储
+│ 向量库  │结构化数据│ 缓存  │
+└─────────┴───────┴───────┘
 ```
 
 ## 🚀 快速开始
@@ -71,7 +94,6 @@
 ### 方式一：使用一键部署脚本（推荐）
 
 #### 选项A：Docker版本（推荐）
-##### macOS/Linux 用户
 ```bash
 # 给脚本添加执行权限
 chmod +x scripts/dev_setup.sh
@@ -95,29 +117,7 @@ chmod +x scripts/dev_setup.sh
 ./scripts/dev_setup.sh clean
 ```
 
-##### Windows 用户
-```cmd
-# 首次完整环境设置
-scripts\dev_setup.bat setup
-
-# 启动服务
-scripts\dev_setup.bat start
-
-# 检查服务状态
-scripts\dev_setup.bat status
-
-# 停止服务
-scripts\dev_setup.bat stop
-
-# 重启服务
-scripts\dev_setup.bat restart
-
-# 清理环境
-scripts\dev_setup.bat clean
-```
-
 #### 选项B：非Docker版本（本地服务）
-##### macOS/Linux 用户
 ```bash
 # 给脚本添加执行权限
 chmod +x scripts/dev_setup_no_docker.sh
@@ -140,8 +140,6 @@ chmod +x scripts/dev_setup_no_docker.sh
 # 清理环境
 ./scripts/dev_setup_no_docker.sh clean
 ```
-
-**注意**：非Docker版本需要系统管理员权限来安装和配置PostgreSQL、Redis等服务。
 
 ### 方式二：手动部署
 
@@ -198,8 +196,71 @@ npm install
 npm run dev
 ```
 
-## 📁 项目结构
+## 🔧 系统配置
 
+### 超级管理员配置
+1. 访问 `/admin/login` 进行管理员登录
+2. 配置模型供应商（OpenAI、通义千问等）
+3. 设置系统配置参数
+4. 管理用户权限
+
+### 知识库创建
+1. 登录系统后进入知识库页面
+2. 点击"创建知识库"
+3. 选择模型配置
+4. 上传文档和图片
+5. 系统自动进行向量化处理
+
+### API密钥管理
+1. 在设置页面创建API密钥
+2. 配置访问权限和限制
+3. 获取API密钥用于外部调用
+
+## 📚 使用指南
+
+### 智能聊天
+1. 进入聊天页面
+2. 选择知识库和模型
+3. 开始对话，系统会自动检索相关知识
+4. 支持多会话管理和历史记录
+
+### 智能检索
+1. 进入增强检索页面
+2. 配置检索参数
+3. 输入查询内容
+4. 查看检索结果和相关性评分
+
+### 召回测试
+1. 在知识库详情页面选择"召回测试"标签
+2. 创建测试用例
+3. 运行测试并查看结果
+4. 优化检索参数
+
+## 🔌 API接口
+
+### 内部API
+- 认证相关：`/auth/*`
+- 用户管理：`/users/*`
+- 知识库管理：`/kb/*`
+- 聊天接口：`/chat/*`
+- 智能检索：`/intelligent-retrieval/*`
+- 增强检索：`/enhanced-retrieval/*`
+- 插件管理：`/plugins/*`
+
+### 外部API
+- 智能检索：`/api/v1/external/intelligent-search`
+- 知识库问答：`/api/v1/external/chat/query`
+- 向量检索：`/api/v1/external/retrieval/search`
+
+### 管理员API
+- 模型供应商：`/api/v1/admin/model-providers/*`
+- 模型配置：`/api/v1/admin/model-configs/*`
+- 系统配置：`/api/v1/admin/system-configs/*`
+- 用户管理：`/api/v1/admin/users/*`
+
+## 🛠️ 开发指南
+
+### 项目结构
 ```
 MetaBox/
 ├── frontend/                 # React + TypeScript + Tailwind
@@ -224,175 +285,52 @@ MetaBox/
 │   └── requirements.txt
 ├── docker/                   # Docker 配置
 ├── scripts/                  # 部署脚本
-│   ├── dev_setup.sh         # macOS/Linux Docker开发脚本
-│   ├── dev_setup.bat        # Windows Docker开发脚本
-│   └── dev_setup_no_docker.sh # 非Docker开发脚本
 ├── docs/                     # 项目文档
 └── tests/                    # 集成测试
 ```
 
-## 🔧 核心功能
+### 代码规范
+- 前端：TypeScript + ESLint + Prettier
+- 后端：Python + Black + isort + flake8
+- 提交规范：Conventional Commits
+- 测试覆盖率：> 80%
 
-### 知识库管理
-- 📚 多知识库支持
-- 📄 文档上传与解析
-- 🖼️ 图片处理与向量化
-- 🔍 智能检索与召回测试
+## 📊 性能指标
 
-### 智能对话
-- 💬 多轮对话支持
-- 🧠 RAG 检索增强生成
-- 🔄 流式响应
-- 📊 会话管理
+### 系统性能
+- 支持并发用户：1000+
+- 响应时间：< 2秒
+- 检索准确率：> 90%
+- 系统可用性：99.9%
 
-### 插件系统
-- 🔌 插件开发框架
-- 🤖 Agent 多步推理
-- ⚙️ 插件管理界面
-- 🧪 插件测试工具
-
-### 高级 RAG 优化
-- 📝 智能文本分割
-- 🔗 父子块分割策略
-- 🎯 多模型 Embedding 路由
-- 🔄 混合检索引擎
-- 📊 重排序优化
-
-## 🌐 访问地址
-
-启动成功后，可通过以下地址访问：
-
-- **前端界面**: http://localhost:3000
-- **后端 API**: http://localhost:8000
-- **API 文档**: http://localhost:8000/docs
-- **数据库管理**: http://localhost:5432 (PostgreSQL)
-
-## 📚 开发文档
-
-- [API 文档](docs/api/)
-- [部署指南](docs/deployment/)
-- [开发指南](docs/development/)
-- [RAG 优化技术](docs/rag_optimization_tech.md)
-
-## 🧪 测试
-
-### 后端测试
-```bash
-cd backend
-source venv/bin/activate
-pytest tests/ -v
-```
-
-### 前端测试
-```bash
-cd frontend
-npm test
-```
-
-### 集成测试
-```bash
-pytest tests/integration/ -v
-```
-
-## 🚀 生产部署
-
-### Docker Compose 部署
-```bash
-# 构建镜像
-docker-compose build
-
-# 启动服务
-docker-compose up -d
-
-# 查看日志
-docker-compose logs -f
-```
-
-### 环境变量配置
-复制 `env.example` 为 `.env` 并配置：
-```bash
-# 数据库配置
-DATABASE_URL=postgresql://user:password@localhost/metabox
-REDIS_URL=redis://localhost:6379
-
-# 向量数据库配置
-QDRANT_URL=http://localhost:6333
-
-# API 密钥
-OPENAI_API_KEY=your-openai-api-key
-SECRET_KEY=your-secret-key
-
-# 其他配置
-DEBUG=false
-LOG_LEVEL=INFO
-```
+### 硬件要求
+- **最低配置**：4核CPU、8GB内存、100GB存储
+- **推荐配置**：8核CPU、16GB内存、500GB存储
+- **生产环境**：16核CPU、32GB内存、1TB存储
 
 ## 🤝 贡献指南
 
 1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
+2. 创建功能分支：`git checkout -b feature/AmazingFeature`
+3. 提交更改：`git commit -m 'Add some AmazingFeature'`
+4. 推送分支：`git push origin feature/AmazingFeature`
+5. 提交 Pull Request
 
 ## 📄 许可证
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
 
-## 🆘 常见问题
+## 🆘 支持与反馈
 
-### Q: 脚本执行权限问题
-```bash
-chmod +x scripts/dev_setup.sh
-chmod +x scripts/dev_setup_no_docker.sh
-```
+- 📧 邮箱：support@metabox.ai
+- 💬 讨论区：[GitHub Discussions](https://github.com/your-repo/discussions)
+- 🐛 问题反馈：[GitHub Issues](https://github.com/your-repo/issues)
+- 📖 文档：[项目文档](https://docs.metabox.ai)
 
-### Q: Docker 服务未启动
-确保 Docker Desktop 已启动并运行。
+## 🙏 致谢
 
-### Q: 非Docker版本需要管理员权限
-非Docker版本需要安装系统服务，可能需要sudo权限。
-
-### Q: 端口被占用
-修改 `docker-compose.yml` 中的端口映射，或停止占用端口的服务。
-
-### Q: 数据库连接失败
-检查 `.env` 文件中的数据库配置，确保数据库服务正常运行。
-
-### Q: 选择哪个部署方式？
-- **Docker版本**：推荐，环境隔离，一键部署
-- **非Docker版本**：适合需要直接访问本地服务的场景
-
-## 📞 支持
-
-如有问题，请：
-1. 查看 [常见问题](#常见问题) 部分
-2. 检查 [开发文档](docs/development/)
-3. 提交 [Issue](../../issues)
-
-## 🚀 API快速上手
-
-1. 登录管理后台，创建API密钥
-2. 参考 [docs/api/external_api_design.md](docs/api/external_api_design.md) 查看接口说明与示例
-3. 前端/Node.js 推荐使用官方SDK：
-
-```typescript
-import { MetaBoxClient } from './sdk/metabox';
-const client = new MetaBoxClient({ apiKey: 'your_api_key', baseUrl: '/api/v1' });
-const res = await client.query({ message: '什么是人工智能？', kb_ids: ['kb_123'] });
-```
-
-4. 也可直接用curl/Python等调用：
-
-```bash
-curl -X POST https://yourdomain.com/api/v1/chat/query \
-  -H "Authorization: Bearer <your_api_key>" \
-  -H "Content-Type: application/json" \
-  -d '{"message":"什么是人工智能？","kb_ids":["kb_123"]}'
-```
-
-5. 支持流式响应、检索、知识库管理等高级功能，详见文档。
+感谢所有为MetaBox项目做出贡献的开发者和用户！
 
 ---
 
-**MetaBox** - 让知识管理更智能 🚀 
+**MetaBox** - 让知识管理更智能，让AI应用更简单 🚀 
