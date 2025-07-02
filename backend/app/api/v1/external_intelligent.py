@@ -13,9 +13,8 @@ from ...services.vector_service import VectorService
 from ...services.hybrid_retriever import HybridRetriever
 from ...services.enhanced_retrieval_pipeline import EnhancedRetrievalPipeline
 from ...core.database import get_db
-from ...schemas.api_key import ApiKey
-from ...utils.api_key_auth import require_search_permission
-from ...utils.rate_limit import record_api_usage
+from ...models.api_key import ApiKey
+from ...core.auth import require_search_permission
 
 logger = logging.getLogger(__name__)
 

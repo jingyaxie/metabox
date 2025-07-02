@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Settings, Database, Users, Activity, Shield, 
-  Plus, Edit, Trash2, TestTube, Eye, EyeOff,
+  Plus, Edit, Trash2, TestTube, Eye,
   Server, Cpu, HardDrive, Network, AlertCircle,
-  CheckCircle, Clock, TrendingUp, BarChart3
+  CheckCircle, Clock, BarChart3
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
@@ -36,18 +34,6 @@ interface ModelProvider {
   is_active: boolean
   created_at: string
   updated_at: string
-}
-
-interface ModelConfig {
-  id: string
-  provider_id: string
-  model_name: string
-  display_name: string
-  model_type: string
-  max_tokens: number
-  temperature: string
-  is_default: boolean
-  is_active: boolean
 }
 
 interface SystemConfig {

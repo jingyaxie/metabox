@@ -8,7 +8,7 @@ import asyncio
 import logging
 
 from app.models.chat import ChatSession, ChatMessage
-from app.models.knowledge_base import KnowledgeBaseChunk as TextChunk, KnowledgeBaseImage as ImageVector
+from app.models.knowledge_base import TextChunk, ImageVector
 from app.schemas.chat import ChatResponse
 from app.services.vector_service import VectorService
 from app.core.config import settings

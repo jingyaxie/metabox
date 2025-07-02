@@ -19,6 +19,10 @@ export interface Message {
     feedback?: 'like' | 'dislike'
     tokens_used?: number
     model_used?: string
+    model?: string
+    knowledge_base?: string
+    tokens?: number
+    [key: string]: any
   }
 }
 

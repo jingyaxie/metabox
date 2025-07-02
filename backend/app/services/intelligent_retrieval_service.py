@@ -1,3 +1,4 @@
+from .intent_recognizer import QueryType
 """
 智能检索服务
 自动识别用户查询意图，选择最合适的检索策略

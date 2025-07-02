@@ -93,13 +93,13 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         {/* 消息元数据 */}
         {message.metadata && (
           <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-            {message.metadata.model && (
+            {message.metadata?.model && (
               <span>模型: {message.metadata.model}</span>
             )}
-            {message.metadata.knowledge_base && (
+            {message.metadata?.knowledge_base && (
               <span>知识库: {message.metadata.knowledge_base}</span>
             )}
-            {message.metadata.tokens && (
+            {message.metadata?.tokens && (
               <span>Token: {message.metadata.tokens}</span>
             )}
           </div>

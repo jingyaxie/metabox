@@ -121,12 +121,6 @@ const KnowledgeBase: React.FC = () => {
     }
   }
 
-  const getModelDisplayName = (modelId: string, modelType: string) => {
-    const modelList = models[modelType as keyof typeof models] || []
-    const model = modelList.find(m => m.id === modelId)
-    return model ? `${model.provider} - ${model.name}` : '未配置'
-  }
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -171,7 +165,7 @@ const KnowledgeBase: React.FC = () => {
                   <Label htmlFor="type">类型</Label>
                   <Select value={form.type} onValueChange={value => setForm(f => ({ ...f, type: value }))}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue>请选择</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="text">文本</SelectItem>
@@ -220,7 +214,7 @@ const KnowledgeBase: React.FC = () => {
                       onValueChange={value => setForm(f => ({ ...f, text_model_id: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择文本理解模型" />
+                        <SelectValue>请选择</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {models.chat.map(model => (
@@ -241,7 +235,7 @@ const KnowledgeBase: React.FC = () => {
                       onValueChange={value => setForm(f => ({ ...f, image_model_id: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择图片理解模型" />
+                        <SelectValue>请选择</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {models.image.map(model => (
@@ -262,7 +256,7 @@ const KnowledgeBase: React.FC = () => {
                       onValueChange={value => setForm(f => ({ ...f, embedding_model_id: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择文本嵌入模型" />
+                        <SelectValue>请选择</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {models.embedding.map(model => (
@@ -283,7 +277,7 @@ const KnowledgeBase: React.FC = () => {
                       onValueChange={value => setForm(f => ({ ...f, image_embedding_model_id: value }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="选择图片嵌入模型" />
+                        <SelectValue>请选择</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {models.image.map(model => (

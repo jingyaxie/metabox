@@ -24,7 +24,7 @@ from app.schemas.api_key import (
     ExternalKbListResponse
 )
 from app.services.chat_service import ChatService
-from app.services.retrieval_service import RetrievalService
+from app.services.intelligent_retrieval_service import IntelligentRetrievalService as RetrievalService
 from app.services.knowledge_base_service import KnowledgeBaseService
 from app.models.api_key import ApiKey
 from .external_intelligent import router as external_intelligent_router

@@ -258,7 +258,7 @@ export const useChatStore = create<ChatStore>()(
               session_id: currentSessionId,
               metadata: {
                 knowledge_base: selectedKnowledgeBase,
-                model: selectedModel
+                model: selectedModel,
               }
             }
 
