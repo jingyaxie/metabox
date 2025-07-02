@@ -19,7 +19,7 @@ from ..services.reranker import RerankStrategy
 from ..services.metadata_filter import FilterCondition, FilterOperator
 from ..services.vector_service import VectorService
 from ..core.database import get_db
-from ..schemas.auth import get_current_user
+from ..core.deps import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,8 @@ pipeline: Optional[EnhancedRetrievalPipeline] = None
 
 class QueryRequest(BaseModel):
     """查询请求"""
+    model_config = {"arbitrary_types_allowed": True}
+    
     query: str
     kb_ids: List[str]
     user_context: Optional[Dict[str, Any]] = None
@@ -39,6 +41,8 @@ class QueryRequest(BaseModel):
 
 class QueryResponse(BaseModel):
     """查询响应"""
+    model_config = {"arbitrary_types_allowed": True}
+    
     success: bool
     data: Optional[Dict[str, Any]] = None
     message: str = ""
@@ -46,6 +50,8 @@ class QueryResponse(BaseModel):
 
 class PipelineConfigRequest(BaseModel):
     """流水线配置请求"""
+    model_config = {"arbitrary_types_allowed": True}
+    
     enable_query_preprocessing: bool = True
     enable_query_expansion: bool = True
     expansion_strategy: ExpansionStrategy = ExpansionStrategy.HYBRID
@@ -65,6 +71,8 @@ class PipelineConfigRequest(BaseModel):
 
 class FilterConditionRequest(BaseModel):
     """过滤条件请求"""
+    model_config = {"arbitrary_types_allowed": True}
+    
     field: str
     operator: FilterOperator
     value: Any
@@ -72,6 +80,8 @@ class FilterConditionRequest(BaseModel):
 
 class PipelineStatsResponse(BaseModel):
     """流水线统计响应"""
+    model_config = {"arbitrary_types_allowed": True}
+    
     success: bool
     data: Optional[Dict[str, Any]] = None
     message: str = ""

@@ -11,7 +11,7 @@ from ..services.vector_service import VectorService
 from ..services.hybrid_retriever import HybridRetriever
 from ..services.enhanced_retrieval_pipeline import EnhancedRetrievalPipeline
 from ..core.database import get_db
-from ..schemas.auth import get_current_user
+from ..core.deps import get_current_user
 
 logger = logging.getLogger(__name__)
 

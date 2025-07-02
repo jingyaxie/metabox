@@ -10,7 +10,6 @@ import logging
 
 from app.services.hybrid_chunker import HybridChunker, HybridChunk
 from app.services.embedding_router import EmbeddingRouter, EmbeddingModel
-from app.services.smart_config import SmartConfigService
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +54,15 @@ class AdvancedPreviewService:
     def __init__(self):
         self.hybrid_chunker = HybridChunker()
         self.embedding_router = EmbeddingRouter()
-        self.smart_config_service = SmartConfigService()
+        # 延迟初始化 smart_config_service
+        self._smart_config_service = None
+    
+    @property
+    def smart_config_service(self):
+        if self._smart_config_service is None:
+            from app.services.smart_config import SmartConfigService
+            self._smart_config_service = SmartConfigService()
+        return self._smart_config_service
     
     async def get_comprehensive_preview(
         self,

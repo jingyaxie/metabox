@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 import logging
 from app.core.config import settings
-from app.models.knowledge_base import TextChunk, ImageVector
+from app.models.knowledge_base import KnowledgeBaseChunk as TextChunk, KnowledgeBaseImage as ImageVector
 import qdrant_client
 from qdrant_client.models import Distance, VectorParams, PointStruct
 
