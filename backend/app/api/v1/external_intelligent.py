@@ -18,7 +18,7 @@ from ...core.auth import require_search_permission
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/intelligent", tags=["外部智能检索"])
+router = APIRouter(prefix="/v1/intelligent", tags=["外部智能检索"])
 
 # 全局智能检索服务实例
 intelligent_service: Optional[IntelligentRetrievalService] = None

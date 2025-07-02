@@ -23,7 +23,7 @@ from ..core.deps import get_current_user
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/enhanced-retrieval", tags=["增强检索"])
+router = APIRouter(prefix="/enhanced-retrieval", tags=["增强检索"])
 
 # 全局流水线实例
 pipeline: Optional[EnhancedRetrievalPipeline] = None

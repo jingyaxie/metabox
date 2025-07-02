@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 from datetime import datetime, timedelta
 import time
+import uuid
 
 from app.models.api_key import ApiKey, ApiKeyUsage, ApiKeyQuota
 from app.schemas.api_key import (
@@ -31,8 +32,8 @@ class ApiKeyService:
         """创建API密钥"""
         # 生成密钥
         key, key_hash, key_prefix = ApiKey.generate_key(
-            app_id=api_key_data.app_id,
-            app_name=api_key_data.app_name
+            api_key_data.app_id, 
+            api_key_data.app_name
         )
         
         # 创建API密钥记录
@@ -43,7 +44,7 @@ class ApiKeyService:
             key_prefix=key_prefix,
             permissions=api_key_data.permissions,
             expires_at=api_key_data.expires_at,
-            user_id=user_id
+            user_id=uuid.UUID(user_id) if user_id else None
         )
         
         self.db.add(api_key)
@@ -69,8 +70,12 @@ class ApiKeyService:
 
     def get_api_keys_by_user(self, user_id: str) -> List[ApiKeyResponse]:
         """获取用户的所有API密钥"""
-        api_keys = self.db.query(ApiKey).filter(ApiKey.user_id == user_id).all()
-        return [ApiKeyResponse.from_orm(api_key) for api_key in api_keys]
+        try:
+            user_uuid = uuid.UUID(user_id)
+            api_keys = self.db.query(ApiKey).filter(ApiKey.user_id == user_uuid).all()
+            return [ApiKeyResponse.from_orm(api_key) for api_key in api_keys]
+        except ValueError:
+            return []
 
     def update_api_key(self, api_key_id: str, api_key_data: ApiKeyUpdate) -> ApiKeyResponse:
         """更新API密钥"""

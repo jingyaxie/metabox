@@ -37,11 +37,7 @@ async def register(user_data: UserRegister, db: Session = Depends(get_db)):
         )
     
     # 创建用户
-    user = auth_service.create_user(
-        username=user_data.username,
-        email=user_data.email,
-        password=user_data.password
-    )
+    user = auth_service.create_user(user_data)
     
     # 生成访问令牌
     access_token = auth_service.create_access_token(user.id)

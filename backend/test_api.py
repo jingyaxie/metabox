@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""
+API测试脚本
+"""
+import uuid
+from sqlalchemy.orm import sessionmaker
+from app.core.database import engine
+from app.models.user import User
+from app.services.knowledge_base_service import KnowledgeBaseService
+from app.services.api_key_service import ApiKeyService
+
+# 创建数据库会话
+Session = sessionmaker(bind=engine)
+db = Session()
+
+try:
+    # 获取测试用户
+    test_user = db.query(User).first()
+    if not test_user:
+        print("没有找到用户")
+        exit(1)
+    
+    print(f"测试用户: {test_user.username} (ID: {test_user.id})")
+    
+    # 测试知识库服务
+    print("\n=== 测试知识库服务 ===")
+    kb_service = KnowledgeBaseService(db)
+    try:
+        kb_list = kb_service.get_user_knowledge_bases(str(test_user.id))
+        print(f"知识库数量: {len(kb_list)}")
+        print("知识库列表:", [kb.name for kb in kb_list])
+    except Exception as e:
+        print(f"知识库服务错误: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    # 测试API密钥服务
+    print("\n=== 测试API密钥服务 ===")
+    try:
+        api_key_service = ApiKeyService(db)
+        api_keys = api_key_service.get_api_keys_by_user(str(test_user.id))
+        print(f"API密钥数量: {len(api_keys)}")
+        print("API密钥列表:", [key.app_name for key in api_keys])
+    except Exception as e:
+        print(f"API密钥服务错误: {e}")
+        import traceback
+        traceback.print_exc()
+
+except Exception as e:
+    print(f"测试失败: {e}")
+    import traceback
+    traceback.print_exc()
+
+finally:
+    db.close() 

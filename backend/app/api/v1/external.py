@@ -29,7 +29,7 @@ from app.services.knowledge_base_service import KnowledgeBaseService
 from app.models.api_key import ApiKey
 from .external_intelligent import router as external_intelligent_router
 
-router = APIRouter(prefix="/api/v1", tags=["external"])
+router = APIRouter(prefix="/v1", tags=["external"])
 
 # 注册智能检索路由
 router.include_router(external_intelligent_router)

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 import jwt
 from passlib.context import CryptContext
+import uuid
 
 from app.core.config import settings
 from app.models.user import User
@@ -38,7 +39,13 @@ class AuthService:
     
     def get_user_by_id(self, user_id: str) -> Optional[User]:
         """根据ID获取用户"""
-        return self.db.query(User).filter(User.id == user_id).first()
+        try:
+            # 将字符串转换为UUID
+            user_uuid = uuid.UUID(user_id)
+            return self.db.query(User).filter(User.id == user_uuid).first()
+        except ValueError:
+            # 如果user_id不是有效的UUID格式，返回None
+            return None
     
     def authenticate_user(self, username: str, password: str) -> Optional[User]:
         """验证用户凭据"""

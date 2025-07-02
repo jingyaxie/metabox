@@ -22,16 +22,25 @@ class KnowledgeBaseService:
     
     def get_user_knowledge_bases(self, user_id: str) -> List[KnowledgeBase]:
         """获取用户的知识库列表"""
-        return self.db.query(KnowledgeBase).filter(
-            KnowledgeBase.owner_id == user_id
-        ).all()
+        try:
+            user_uuid = uuid.UUID(user_id)
+            return self.db.query(KnowledgeBase).filter(
+                KnowledgeBase.owner_id == user_uuid
+            ).all()
+        except ValueError:
+            return []
     
     def get_knowledge_base_by_id(self, kb_id: str, user_id: str) -> Optional[KnowledgeBase]:
         """根据ID获取知识库（检查权限）"""
-        return self.db.query(KnowledgeBase).filter(
-            KnowledgeBase.id == kb_id,
-            KnowledgeBase.owner_id == user_id
-        ).first()
+        try:
+            kb_uuid = uuid.UUID(kb_id)
+            user_uuid = uuid.UUID(user_id)
+            return self.db.query(KnowledgeBase).filter(
+                KnowledgeBase.id == kb_uuid,
+                KnowledgeBase.owner_id == user_uuid
+            ).first()
+        except ValueError:
+            return None
     
     def get_knowledge_base_chunks(self, kb_id: str, user_id: str) -> List[TextChunk]:
         """获取知识库的文本分块"""
@@ -40,9 +49,13 @@ class KnowledgeBaseService:
         if not kb:
             return []
         
-        return self.db.query(TextChunk).filter(
-            TextChunk.knowledge_base_id == kb_id
-        ).order_by(TextChunk.chunk_index).all()
+        try:
+            kb_uuid = uuid.UUID(kb_id)
+            return self.db.query(TextChunk).filter(
+                TextChunk.knowledge_base_id == kb_uuid
+            ).order_by(TextChunk.chunk_index).all()
+        except ValueError:
+            return []
     
     def get_knowledge_base_images(self, kb_id: str, user_id: str) -> List[ImageVector]:
         """获取知识库的图片"""
@@ -51,9 +64,13 @@ class KnowledgeBaseService:
         if not kb:
             return []
         
-        return self.db.query(ImageVector).filter(
-            ImageVector.knowledge_base_id == kb_id
-        ).order_by(ImageVector.created_at.desc()).all()
+        try:
+            kb_uuid = uuid.UUID(kb_id)
+            return self.db.query(ImageVector).filter(
+                ImageVector.knowledge_base_id == kb_uuid
+            ).order_by(ImageVector.created_at.desc()).all()
+        except ValueError:
+            return []
     
     def create_knowledge_base(
         self, 
@@ -67,20 +84,24 @@ class KnowledgeBaseService:
         image_embedding_model_id: Optional[str] = None
     ) -> KnowledgeBase:
         """创建知识库"""
-        knowledge_base = KnowledgeBase(
-            name=name,
-            description=description,
-            type=kb_type,
-            owner_id=user_id,
-            text_model_id=text_model_id,
-            image_model_id=image_model_id,
-            embedding_model_id=embedding_model_id,
-            image_embedding_model_id=image_embedding_model_id
-        )
-        self.db.add(knowledge_base)
-        self.db.commit()
-        self.db.refresh(knowledge_base)
-        return knowledge_base
+        try:
+            user_uuid = uuid.UUID(user_id)
+            knowledge_base = KnowledgeBase(
+                name=name,
+                description=description,
+                type=kb_type,
+                owner_id=user_uuid,
+                text_model_id=text_model_id,
+                image_model_id=image_model_id,
+                embedding_model_id=embedding_model_id,
+                image_embedding_model_id=image_embedding_model_id
+            )
+            self.db.add(knowledge_base)
+            self.db.commit()
+            self.db.refresh(knowledge_base)
+            return knowledge_base
+        except ValueError:
+            raise ValueError("无效的用户ID格式")
     
     def update_knowledge_base(self, kb_id: str, user_id: str, name: str, description: str) -> Optional[KnowledgeBase]:
         """更新知识库"""
@@ -142,7 +163,7 @@ class KnowledgeBaseService:
             
             for i, chunk_content in enumerate(chunks):
                 text_chunk = TextChunk(
-                    knowledge_base_id=kb_id,
+                    knowledge_base_id=uuid.UUID(kb_id),
                     content=chunk_content,
                     source_file=file.filename,
                     chunk_index=i

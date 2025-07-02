@@ -14,8 +14,6 @@ from .intelligent_retrieval import router as intelligent_retrieval_router
 from .v1.api_keys import router as api_keys_router
 from .v1.external import router as external_router
 from .v1.admin import router as admin_router
-from .v1.files import router as files_router
-from .v1.files import router as files_router
 
 # 创建主路由
 router = APIRouter()
@@ -25,13 +23,11 @@ router.include_router(auth_router, prefix="/auth", tags=["认证"])
 router.include_router(users_router, prefix="/users", tags=["用户"])
 router.include_router(kb_router, prefix="/kb", tags=["知识库"])
 router.include_router(chat_router, prefix="/chat", tags=["聊天"])
-router.include_router(plugins_router, prefix="/plugins", tags=["插件管理"])
+router.include_router(plugins_router, tags=["插件管理"])
 router.include_router(health_router, prefix="/health", tags=["健康检查"])
 router.include_router(smart_config_router, prefix="/kb", tags=["智能配置"])
 router.include_router(enhanced_retrieval_router, tags=["增强检索"])
 router.include_router(intelligent_retrieval_router, tags=["智能检索"])
 router.include_router(api_keys_router, tags=["API密钥管理"])
 router.include_router(external_router, tags=["外部API"])
-router.include_router(admin_router, tags=["超级管理员"])
-router.include_router(files_router, prefix="/files", tags=["文件访问"])
-router.include_router(files_router, prefix="/files", tags=["文件访问"]) 
+router.include_router(admin_router, tags=["超级管理员"]) 

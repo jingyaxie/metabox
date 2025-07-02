@@ -15,7 +15,7 @@ from ..core.deps import get_current_user
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/intelligent-retrieval", tags=["智能检索"])
+router = APIRouter(prefix="/intelligent-retrieval", tags=["智能检索"])
 
 # 全局智能检索服务实例
 intelligent_service: Optional[IntelligentRetrievalService] = None

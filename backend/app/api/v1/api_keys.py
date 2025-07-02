@@ -15,7 +15,7 @@ from app.schemas.api_key import (
 from app.services.api_key_service import ApiKeyService
 from app.models.user import User
 
-router = APIRouter(prefix="/api/v1/api-keys", tags=["api-keys"])
+router = APIRouter(prefix="/v1/api-keys", tags=["api-keys"])
 
 
 @router.post("/", response_model=dict)
@@ -61,7 +61,7 @@ async def list_api_keys(
     """获取用户的API密钥列表"""
     try:
         api_key_service = ApiKeyService(db)
-        api_keys = api_key_service.get_api_keys_by_user(current_user.id)
+        api_keys = api_key_service.get_api_keys_by_user(str(current_user.id))
         
         return ApiKeyListResponse(
             api_keys=api_keys,

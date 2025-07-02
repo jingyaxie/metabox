@@ -107,7 +107,7 @@ async def get_knowledge_bases(
     kb_service = KnowledgeBaseService(db)
     
     # 获取用户的知识库
-    knowledge_bases = kb_service.get_user_knowledge_bases(current_user.id)
+    knowledge_bases = kb_service.get_user_knowledge_bases(str(current_user.id))
     return knowledge_bases
 
 @router.post("/")
