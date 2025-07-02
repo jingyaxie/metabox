@@ -10,16 +10,10 @@ alembic==1.13.1
 
 # 向量数据库 - 使用Chroma
 chromadb==0.4.18
-sentence-transformers==2.2.2
 
 # 文件处理
 python-multipart==0.0.6
 aiofiles==23.2.1
-
-# 文本处理
-langchain==0.1.0
-langchain-text-splitters==0.0.1
-langchain-community==0.0.10
 
 # 模型调用
 openai==1.6.1

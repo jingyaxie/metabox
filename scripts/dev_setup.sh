@@ -81,10 +81,14 @@ setup_python_env() {
     
     # 安装依赖
     if [ -f "requirements.txt" ]; then
+        log_info "安装依赖..."
+        pip install -r requirements.txt
+        log_info "安装依赖..."
         pip install -r requirements.txt
     fi
     
     if [ -f "requirements-dev.txt" ]; then
+        log_info "安装开发依赖..."
         pip install -r requirements-dev.txt
     fi
     
