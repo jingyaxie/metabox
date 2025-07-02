@@ -26,7 +26,7 @@ openai==1.6.1
 dashscope==1.14.0
 
 # 图片处理
-Pillow==10.1.0
+Pillow>=10.0.0
 
 # 工具库
 python-jose[cryptography]==3.3.0

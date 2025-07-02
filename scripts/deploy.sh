@@ -87,12 +87,9 @@ start_services() {
     log_info "等待服务启动..."
     sleep 10
     
-    # 运行数据库迁移（SQLite）（SQLite）
+    # 运行数据库迁移（SQLite）
     log_info "运行数据库迁移..."
     docker-compose exec backend python -m alembic upgrade head
-    
-    # 启动应用服务（已包含在上面的docker-compose up -d中）
-    
     
     log_success "服务启动完成"
 }

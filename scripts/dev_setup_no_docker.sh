@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MetaBox 本地开发环境一键部署脚本 (非Docker版本)
-# 适用于 macOS/Linux 开发环境，使用本地安装的服务
+# 适用于 macOS/Linux 开发环境，使用轻量级配置
 
 set -e  # 遇到错误立即退出
 
@@ -44,11 +44,6 @@ check_environment() {
     # 检查操作系统
     if [[ "$OSTYPE" == "darwin"* ]]; then
         log_info "检测到 macOS 系统"
-        # 检查 Homebrew
-        if ! command -v brew &> /dev/null; then
-            log_error "Homebrew 未安装，请先安装 Homebrew: https://brew.sh/"
-            exit 1
-        fi
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         log_info "检测到 Linux 系统"
     else
@@ -69,32 +64,20 @@ check_environment() {
 install_system_deps_macos() {
     log_info "安装系统依赖 (macOS)..."
     
-    # 安装 SQLite（通常已预装）
-    if ! brew list postgresql@14 &> /dev/null; then
-        log_info "安装 PostgreSQL..."
-        # SQLite 通常已预装，无需额外安装
-        # SQLite 无需启动服务
-    else
-        log_info "PostgreSQL 已安装，启动服务..."
-        # SQLite 无需启动服务
+    # 检查 Homebrew
+    if ! command -v brew &> /dev/null; then
+        log_error "Homebrew 未安装，请先安装 Homebrew: https://brew.sh/"
+        exit 1
     fi
     
-    # 使用内存缓存（无需额外安装）
-    if ! brew list redis &> /dev/null; then
-        log_info "安装 Redis..."
-        # 使用内存缓存，无需额外安装
-        # 使用内存缓存，无需启动服务
-    else
-        log_info "Redis 已安装，启动服务..."
-        # 使用内存缓存，无需启动服务
-    fi
+    # SQLite 通常已预装，无需额外安装
+    log_info "SQLite 已预装，无需额外安装"
     
-    # Chroma 向量数据库（Python 包，无需额外安装）
+    # 使用内存缓存，无需额外安装
+    log_info "使用内存缓存，无需额外安装"
+    
     # Chroma 通过 Python 包安装，无需额外检查
-        log_warning "Qdrant 未安装，将使用 Docker 运行 Qdrant..."
-        check_command "docker"
-        docker run -d --name qdrant -p 6333:6333 qdrant/qdrant
-    fi
+    log_info "Chroma 向量数据库将通过 Python 包安装"
     
     log_success "系统依赖安装完成"
 }
@@ -103,41 +86,14 @@ install_system_deps_macos() {
 install_system_deps_linux() {
     log_info "安装系统依赖 (Linux)..."
     
-    # 检测包管理器
-    if command -v apt-get &> /dev/null; then
-        # Ubuntu/Debian
-        log_info "使用 apt-get 安装依赖..."
-        sudo apt-get update
-        sudo apt-get install -y postgresql postgresql-contrib redis-server
-    elif command -v yum &> /dev/null; then
-        # CentOS/RHEL
-        log_info "使用 yum 安装依赖..."
-        sudo yum install -y postgresql postgresql-server redis
-    elif command -v dnf &> /dev/null; then
-        # Fedora
-        log_info "使用 dnf 安装依赖..."
-        sudo dnf install -y postgresql postgresql-server redis
-    else
-        log_error "不支持的 Linux 发行版，请手动安装 PostgreSQL 和 Redis"
-        exit 1
-    fi
+    # SQLite 通常已预装
+    log_info "SQLite 已预装，无需额外安装"
     
-    # 启动 PostgreSQL
-    log_info "启动 PostgreSQL..."
-    sudo systemctl start postgresql
-    sudo systemctl enable postgresql
+    # 使用内存缓存，无需额外安装
+    log_info "使用内存缓存，无需额外安装"
     
-    # 启动 Redis
-    log_info "启动 Redis..."
-    sudo systemctl start redis
-    sudo systemctl enable redis
-    
-    # 安装 Qdrant
     # Chroma 通过 Python 包安装，无需额外检查
-        log_warning "Qdrant 未安装，将使用 Docker 运行 Qdrant..."
-        check_command "docker"
-        docker run -d --name qdrant -p 6333:6333 qdrant/qdrant
-    fi
+    log_info "Chroma 向量数据库将通过 Python 包安装"
     
     log_success "系统依赖安装完成"
 }
@@ -158,25 +114,13 @@ install_system_deps() {
 setup_database() {
     log_info "配置数据库..."
     
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS 使用 Homebrew 安装的 PostgreSQL
-        DB_USER="postgres"
-        DB_NAME="metabox"
-        
-        # 创建数据库用户和数据库
-        log_info "创建数据库用户和数据库..."
-        createdb $DB_NAME 2>/dev/null || log_info "数据库已存在"
-        
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        # Linux 使用系统安装的 PostgreSQL
-        DB_USER="postgres"
-        DB_NAME="metabox"
-        
-        # 切换到 postgres 用户创建数据库
-        log_info "创建数据库用户和数据库..."
-        sudo -u postgres createdb $DB_NAME 2>/dev/null || log_info "数据库已存在"
-    fi
+    # 创建数据目录
+    mkdir -p data
+    mkdir -p chroma_db
+    mkdir -p uploads
+    mkdir -p logs
     
+    log_info "使用 SQLite 数据库，无需额外配置"
     log_success "数据库配置完成"
 }
 
@@ -243,24 +187,9 @@ setup_env() {
         
         # 生成随机密钥
         SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(32))")
-        sed -i.bak "s/your-secret-key-here/$SECRET_KEY/" .env
+        sed -i.bak "s/your-secret-key-change-in-production/$SECRET_KEY/" .env
         
-        # 配置本地数据库连接
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            # macOS
-            sed -i.bak "s|postgresql://user:password@localhost/metabox|postgresql://postgres@localhost/metabox|" .env
-        else
-            # Linux
-            sed -i.bak "s|postgresql://user:password@localhost/metabox|postgresql://postgres@localhost/metabox|" .env
-        fi
-        
-        # 配置本地 Redis
-        sed -i.bak "s|redis://localhost:6379|redis://localhost:6379|" .env
-        
-        # 配置本地 Qdrant
-        sed -i.bak "s|http://localhost:6333|http://localhost:6333|" .env
-        
-        log_info "请编辑 .env 文件配置其他必要信息"
+        log_info "请编辑 .env 文件配置 API Key 等信息"
     else
         log_info ".env 文件已存在"
     fi
@@ -320,63 +249,11 @@ start_dev_services() {
     cd ..
     
     log_success "开发服务启动完成"
-    log_info "后端服务 PID: $BACKEND_PID"
-    log_info "前端服务 PID: $FRONTEND_PID"
-}
-
-# 检查服务状态
-check_services() {
-    log_info "检查服务状态..."
-    
-    # 检查后端服务
-    if curl -s http://localhost:8000/health > /dev/null; then
-        log_success "后端服务运行正常"
-    else
-        log_warning "后端服务可能未正常启动"
-    fi
-    
-    # 检查前端服务
-    if curl -s http://localhost:3000 > /dev/null; then
-        log_success "前端服务运行正常"
-    else
-        log_warning "前端服务可能未正常启动"
-    fi
-    
-    # 检查 PostgreSQL
-    if pg_isready -h localhost -p 5432 > /dev/null 2>&1; then
-        log_success "PostgreSQL 数据库运行正常"
-    else
-        log_warning "PostgreSQL 数据库可能未正常启动"
-    fi
-    
-    # 检查 Redis
-    if redis-cli ping > /dev/null 2>&1; then
-        log_success "Redis 缓存运行正常"
-    else
-        log_warning "Redis 缓存可能未正常启动"
-    fi
-    
-    # 检查 Qdrant
-    if curl -s http://localhost:6333/health > /dev/null 2>&1; then
-        log_success "Qdrant 向量数据库运行正常"
-    else
-        log_warning "Qdrant 向量数据库可能未正常启动"
-    fi
 }
 
 # 停止服务
 stop_services() {
-    log_info "停止开发服务..."
-    
-    # 停止前端服务
-    if [ -f "logs/frontend.pid" ]; then
-        FRONTEND_PID=$(cat logs/frontend.pid)
-        if kill -0 $FRONTEND_PID 2>/dev/null; then
-            kill $FRONTEND_PID
-            log_info "前端服务已停止"
-        fi
-        rm -f logs/frontend.pid
-    fi
+    log_info "停止服务..."
     
     # 停止后端服务
     if [ -f "logs/backend.pid" ]; then
@@ -388,18 +265,96 @@ stop_services() {
         rm -f logs/backend.pid
     fi
     
-    # 停止 Qdrant (如果是 Docker 运行的)
-    if docker ps | grep -q qdrant; then
-        docker stop qdrant
-        log_info "Qdrant 服务已停止"
+    # 停止前端服务
+    if [ -f "logs/frontend.pid" ]; then
+        FRONTEND_PID=$(cat logs/frontend.pid)
+        if kill -0 $FRONTEND_PID 2>/dev/null; then
+            kill $FRONTEND_PID
+            log_info "前端服务已停止"
+        fi
+        rm -f logs/frontend.pid
     fi
     
-    log_success "所有服务已停止"
+    log_success "服务已停止"
+}
+
+# 检查服务状态
+check_services() {
+    log_info "检查服务状态..."
+    
+    # 检查后端服务
+    if [ -f "logs/backend.pid" ]; then
+        BACKEND_PID=$(cat logs/backend.pid)
+        if kill -0 $BACKEND_PID 2>/dev/null; then
+            log_success "后端服务运行中 (PID: $BACKEND_PID)"
+        else
+            log_warning "后端服务未运行"
+        fi
+    else
+        log_warning "后端服务未启动"
+    fi
+    
+    # 检查前端服务
+    if [ -f "logs/frontend.pid" ]; then
+        FRONTEND_PID=$(cat logs/frontend.pid)
+        if kill -0 $FRONTEND_PID 2>/dev/null; then
+            log_success "前端服务运行中 (PID: $FRONTEND_PID)"
+        else
+            log_warning "前端服务未运行"
+        fi
+    else
+        log_warning "前端服务未启动"
+    fi
+    
+    # 检查端口
+    if netstat -tuln 2>/dev/null | grep -q ":8000 "; then
+        log_success "后端端口 8000 已监听"
+    else
+        log_warning "后端端口 8000 未监听"
+    fi
+    
+    if netstat -tuln 2>/dev/null | grep -q ":3000 "; then
+        log_success "前端端口 3000 已监听"
+    else
+        log_warning "前端端口 3000 未监听"
+    fi
+}
+
+# 显示日志
+show_logs() {
+    local service=${1:-"all"}
+    
+    case $service in
+        "backend")
+            if [ -f "logs/backend.log" ]; then
+                tail -f logs/backend.log
+            else
+                log_error "后端日志文件不存在"
+            fi
+            ;;
+        "frontend")
+            if [ -f "logs/frontend.log" ]; then
+                tail -f logs/frontend.log
+            else
+                log_error "前端日志文件不存在"
+            fi
+            ;;
+        "all")
+            if [ -f "logs/backend.log" ] && [ -f "logs/frontend.log" ]; then
+                tail -f logs/backend.log logs/frontend.log
+            else
+                log_error "日志文件不存在"
+            fi
+            ;;
+        *)
+            log_error "未知服务: $service"
+            ;;
+    esac
 }
 
 # 清理环境
 cleanup() {
-    log_info "清理开发环境..."
+    log_info "清理环境..."
     
     # 停止服务
     stop_services
@@ -407,40 +362,39 @@ cleanup() {
     # 清理日志
     rm -rf logs/*
     
-    # 停止系统服务
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        brew services stop postgresql@14
-        brew services stop redis
-    else
-        sudo systemctl stop postgresql
-        sudo systemctl stop redis
-    fi
+    # 清理缓存
+    rm -rf frontend/node_modules/.cache
+    rm -rf backend/__pycache__
+    rm -rf backend/app/__pycache__
     
     log_success "环境清理完成"
 }
 
 # 显示帮助信息
 show_help() {
-    echo "MetaBox 本地开发环境管理脚本 (非Docker版本)"
+    echo "MetaBox 本地开发环境设置脚本 (非Docker版本)"
     echo ""
     echo "用法: $0 [命令]"
     echo ""
     echo "命令:"
-    echo "  setup      - 完整环境设置（推荐首次使用）"
-    echo "  start      - 启动所有服务"
-    echo "  stop       - 停止所有服务"
-    echo "  restart    - 重启所有服务"
-    echo "  status     - 检查服务状态"
-    echo "  clean      - 清理环境"
-    echo "  help       - 显示帮助信息"
-    echo ""
-    echo "注意: 此脚本使用本地安装的 PostgreSQL、Redis 等服务"
-    echo "     首次使用会自动安装系统依赖"
+    echo "  setup     - 完整环境设置（推荐首次使用）"
+    echo "  start     - 启动开发服务"
+    echo "  stop      - 停止开发服务"
+    echo "  restart   - 重启开发服务"
+    echo "  status    - 检查服务状态"
+    echo "  logs      - 查看服务日志 [backend|frontend|all]"
+    echo "  clean     - 清理环境"
+    echo "  help      - 显示帮助信息"
     echo ""
     echo "示例:"
-    echo "  $0 setup   # 首次设置环境"
-    echo "  $0 start   # 启动服务"
-    echo "  $0 status  # 检查状态"
+    echo "  $0 setup"
+    echo "  $0 start"
+    echo "  $0 logs backend"
+    echo ""
+    echo "访问地址:"
+    echo "  前端: http://localhost:3000"
+    echo "  后端: http://localhost:8000"
+    echo "  API文档: http://localhost:8000/docs"
 }
 
 # 主函数
@@ -453,10 +407,10 @@ main() {
             log_info "开始完整环境设置..."
             check_environment
             install_system_deps
-            setup_database
             setup_python_env
             setup_frontend
             setup_env
+            setup_database
             init_database
             start_dev_services
             check_services
@@ -481,6 +435,9 @@ main() {
             ;;
         "status")
             check_services
+            ;;
+        "logs")
+            show_logs $2
             ;;
         "clean")
             cleanup
