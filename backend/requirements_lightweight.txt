@@ -26,6 +26,13 @@ langchain-community==0.0.10
 openai==1.6.1
 dashscope==1.14.0
 
+# 图片处理 - 轻量级方案
+Pillow==10.1.0
+opencv-python-headless==4.8.1.78  # 无GUI版本
+clip==1.0
+torch==2.1.1
+torchvision==0.16.1
+
 # 工具库
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4

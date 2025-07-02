@@ -190,7 +190,14 @@ class ChatService:
             if image_results:
                 context_parts.append("\n相关图片：")
                 for i, result in enumerate(image_results[:2], 1):
+                    image_url = result["metadata"].get("image_url", "")
+                    context_parts.append(f"{i}. {result["description"]}")
+                    if image_url:
+                        context_parts.append(f"   图片链接：{image_url}")
+                    image_url = result['metadata'].get('image_url', '')
                     context_parts.append(f"{i}. {result['description']}")
+                    if image_url:
+                        context_parts.append(f"   图片链接：{image_url}")
             
             context = "\n".join(context_parts)
             

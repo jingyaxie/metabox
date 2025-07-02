@@ -24,7 +24,7 @@ class LightweightConfig(BaseSettings):
     # 存储配置 - 使用本地文件存储
     STORAGE_TYPE: str = "local"
     UPLOAD_DIR: str = "./uploads"
-    MAX_FILE_SIZE: int = 5 * 1024 * 1024  # 5MB
+    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB，支持图片
     
     # 模型配置 - 使用API调用
     MODEL_TYPE: str = "api"
@@ -38,25 +38,31 @@ class LightweightConfig(BaseSettings):
     
     # 资源限制 - 降低资源消耗
     MAX_CONCURRENT_REQUESTS: int = 5
-    MAX_DOCUMENT_SIZE: int = 2 * 1024 * 1024  # 2MB
+    MAX_DOCUMENT_SIZE: int = 5 * 1024 * 1024  # 5MB，支持图片
     MAX_CHUNK_SIZE: int = 500
-    MAX_CHUNKS_PER_DOC: int = 30
+    MAX_CHUNKS_PER_DOC: int = 50  # 增加分块数量支持图片
     
     # 内存优化
     ENABLE_MEMORY_OPTIMIZATION: bool = True
-    MAX_MEMORY_USAGE: int = 256  # MB
+    MAX_MEMORY_USAGE: int = 512  # MB，增加内存支持图片处理
     CLEANUP_INTERVAL: int = 300  # 5分钟
     
-    # 功能开关 - 关闭重型功能
+    # 功能开关 - 保留图片向量化功能
     ENABLE_RERANK: bool = False  # 关闭重排序
     ENABLE_HYBRID_SEARCH: bool = False  # 关闭混合搜索
     ENABLE_STREAMING: bool = True  # 保留流式响应
-    ENABLE_MULTIMODAL: bool = False  # 关闭多模态
+    ENABLE_MULTIMODAL: bool = True  # 启用多模态，支持图片向量化
     ENABLE_ADVANCED_SEARCH: bool = False  # 关闭高级搜索
     
+    # 图片处理配置
+    ENABLE_IMAGE_VECTORIZATION: bool = True  # 启用图片向量化
+    IMAGE_VECTOR_MODEL: str = "clip"  # 使用CLIP模型
+    IMAGE_MAX_SIZE: int = 1024  # 图片最大尺寸
+    IMAGE_QUALITY: int = 85  # 图片质量
+    
     # 检索配置 - 简化检索
-    MAX_SEARCH_RESULTS: int = 5
-    SEARCH_TIMEOUT: int = 10
+    MAX_SEARCH_RESULTS: int = 10  # 增加结果数量
+    SEARCH_TIMEOUT: int = 15  # 增加超时时间
     
     # 监控配置
     ENABLE_METRICS: bool = False
@@ -122,6 +128,16 @@ class LightweightConfig(BaseSettings):
             "cleanup_interval": self.CLEANUP_INTERVAL,
         }
     
+    def get_image_config(self) -> Dict[str, Any]:
+        """获取图片处理配置"""
+        return {
+            "enable_image_vectorization": self.ENABLE_IMAGE_VECTORIZATION,
+            "image_vector_model": self.IMAGE_VECTOR_MODEL,
+            "image_max_size": self.IMAGE_MAX_SIZE,
+            "image_quality": self.IMAGE_QUALITY,
+            "enable_multimodal": self.ENABLE_MULTIMODAL
+        }
+    
     def get_feature_flags(self) -> Dict[str, bool]:
         """获取功能开关"""
         return {
@@ -130,6 +146,7 @@ class LightweightConfig(BaseSettings):
             "enable_streaming": self.ENABLE_STREAMING,
             "enable_multimodal": self.ENABLE_MULTIMODAL,
             "enable_advanced_search": self.ENABLE_ADVANCED_SEARCH,
+            "enable_image_vectorization": self.ENABLE_IMAGE_VECTORIZATION,
             "lightweight_mode": True
         }
 

@@ -14,6 +14,8 @@ from .intelligent_retrieval import router as intelligent_retrieval_router
 from .v1.api_keys import router as api_keys_router
 from .v1.external import router as external_router
 from .v1.admin import router as admin_router
+from .v1.files import router as files_router
+from .v1.files import router as files_router
 
 # 创建主路由
 router = APIRouter()
@@ -30,4 +32,6 @@ router.include_router(enhanced_retrieval_router, tags=["增强检索"])
 router.include_router(intelligent_retrieval_router, tags=["智能检索"])
 router.include_router(api_keys_router, tags=["API密钥管理"])
 router.include_router(external_router, tags=["外部API"])
-router.include_router(admin_router, tags=["超级管理员"]) 
+router.include_router(admin_router, tags=["超级管理员"])
+router.include_router(files_router, prefix="/files", tags=["文件访问"])
+router.include_router(files_router, prefix="/files", tags=["文件访问"]) 

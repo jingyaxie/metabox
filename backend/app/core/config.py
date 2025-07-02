@@ -14,8 +14,9 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     
     # 数据库配置
-    DATABASE_URL: str = "postgresql://kb_user:kb_password@postgres:5432/metabox"
-    QDRANT_URL: str = "http://qdrant:6333"
+    DATABASE_URL: str = "sqlite:///./metabox.db"  # 改为SQLite
+    VECTOR_DB_TYPE: str = "chroma"  # 改为Chroma
+    CHROMA_PERSIST_DIR: str = "./chroma_db"
     
     # AI 模型配置
     OPENAI_API_KEY: Optional[str] = None
@@ -29,7 +30,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # 文件上传配置
-    MAX_FILE_SIZE: int = 104857600  # 100MB
+    MAX_FILE_SIZE: int = 10485760  # 10MB
     UPLOAD_DIR: str = "uploads"
     ALLOWED_EXTENSIONS: List[str] = ["pdf", "doc", "docx", "txt", "md", "jpg", "jpeg", "png", "gif"]
     
@@ -48,8 +49,13 @@ class Settings(BaseSettings):
     # 向量模型配置
     TEXT_EMBEDDING_MODEL: str = "text-embedding-ada-002"
     TEXT_EMBEDDING_DIMENSION: int = 1536
-    IMAGE_EMBEDDING_MODEL: str = "clip-vit-base-patch32"
-    IMAGE_EMBEDDING_DIMENSION: int = 512
+    
+    # 图片内容理解配置
+    ENABLE_IMAGE_UNDERSTANDING: bool = True
+    IMAGE_OCR_MODEL: str = "gpt-4-vision-preview"  # OCR模型
+    IMAGE_VISION_MODEL: str = "gpt-4-vision-preview"  # 图片理解模型
+    IMAGE_MAX_SIZE: int = 1024  # 图片最大尺寸
+    IMAGE_QUALITY: int = 85  # 图片质量
     
     # RAG 配置
     CHUNK_SIZE: int = 1000
@@ -70,4 +76,5 @@ settings = Settings()
 
 # 确保上传目录存在
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-os.makedirs("logs", exist_ok=True) 
+os.makedirs("logs", exist_ok=True)
+os.makedirs(settings.CHROMA_PERSIST_DIR, exist_ok=True) 
